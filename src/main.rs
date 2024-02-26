@@ -25,22 +25,22 @@ fn main() -> Result<(), anyhow::Error> {
 
         // Full headword
         let hw_full = headword_full(&parsed);
-        let hw_full_str = pandoc(&hw_full.html())?;
+        let hw_full_text = pandoc(&hw_full.html())?;
 
         // Persian- and Latin-script parts of headword
         let (hw_per, hw_lat) = headword_parts(&parsed);
-        let hw_per_str = pandoc(&hw_per.html())?;
-        let hw_lat_str = pandoc(&hw_lat.html())?;
+        let hw_per_text = pandoc(&hw_per.html())?;
+        let hw_lat_text = pandoc(&hw_lat.html())?;
 
         // Definition(s)
         let def = except_headword(&html);
-        let def_str = pandoc(&def)?;
+        let def_text = pandoc(&def)?;
 
-        println!("-----------------");
-        println!("Headword (full): {}", hw_full_str);
-        println!("Headword (Persian): {}", hw_per_str);
-        println!("Headword (Latin): {}", hw_lat_str);
-        println!("Definition(s): {}", def_str);
+        println!("----------------");
+        println!("Headword (full): {}", hw_full_text);
+        println!("Headword (Persian): {}", hw_per_text);
+        println!("Headword (Latin): {}", hw_lat_text);
+        println!("Definition(s): {}", def_text);
     }
 
     Ok(())
@@ -97,7 +97,7 @@ fn pandoc(input: &str) -> Result<String, anyhow::Error> {
         .output()?;
 
     let output = str::from_utf8(&pandoc.stdout)?;
-    let cleaned = output.trim().trim_start_matches(',').trim();
+    let cleaned = output.trim().trim_start_matches(',').trim_start();
 
     Ok(cleaned.to_owned())
 }
