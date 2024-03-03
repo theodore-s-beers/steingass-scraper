@@ -18,7 +18,7 @@ fn main() -> Result<(), anyhow::Error> {
     ensure_table(&conn)?;
 
     let start_page = 1;
-    let stop_page = 5;
+    let stop_page = 100;
 
     for page in start_page..=stop_page {
         println!("----------------");
@@ -26,6 +26,11 @@ fn main() -> Result<(), anyhow::Error> {
         if BAD_PAGES.contains(&page) {
             println!("Skipping p. {}...", page);
             continue;
+        }
+
+        if page > start_page {
+            println!("Pausing for 3 seconds...");
+            sleep(Duration::from_secs(3));
         }
 
         println!("Fetching p. {}...", page);
@@ -42,6 +47,8 @@ fn main() -> Result<(), anyhow::Error> {
             println!("No further entries for p. {}", page);
             continue;
         }
+
+        assert!(db_count == 0, "Partial coverage in DB for p. {}", page);
 
         for (i, result) in results.iter().enumerate() {
             let html = result.html();
@@ -69,11 +76,6 @@ fn main() -> Result<(), anyhow::Error> {
         let db_count_new = count_page_entries(&conn, page)?;
         println!("Updated row count for p. {} in DB: {}", page, db_count_new);
         assert_eq!(db_count_new, results_count);
-
-        if page < stop_page {
-            println!("Pausing for 2 seconds...");
-            sleep(Duration::from_secs(2));
-        }
     }
 
     println!("----------------");

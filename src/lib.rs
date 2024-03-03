@@ -34,7 +34,25 @@ pub struct Entry {
 pub enum Lang {
     #[default]
     Unmarked,
-    Arabic,
+
+    Arabic,    // A
+    English,   // E
+    Greek,     // G
+    Hindi,     // H
+    Mongolian, // M
+    Persian,   // P
+    Russian,   // R
+    Sanskrit,  // S
+    Syriac,    // SY
+    Turkish,   // T
+
+    ArabicTurkish, // A T
+
+    PersianArabic,    // a
+    PersianMongolian, // m
+    PersianTurkish,   // t
+
+    PersianTurkishArabic, // t a
 }
 
 impl Lang {
@@ -42,6 +60,20 @@ impl Lang {
         match self {
             Self::Unmarked => "Unmarked (i.e., Persian)",
             Self::Arabic => "Arabic",
+            Self::English => "English",
+            Self::Greek => "Greek",
+            Self::Hindi => "Hindi",
+            Self::Mongolian => "Mongolian",
+            Self::Persian => "Persian",
+            Self::Russian => "Russian",
+            Self::Sanskrit => "Sanskrit",
+            Self::Syriac => "Syriac",
+            Self::Turkish => "Turkish",
+            Self::ArabicTurkish => "Arabic & Turkish",
+            Self::PersianArabic => "Arabic & Persian",
+            Self::PersianMongolian => "Mongolian & Persian",
+            Self::PersianTurkish => "Persian & Turkish",
+            Self::PersianTurkishArabic => "Arabic & Persian & Turkish",
         }
     }
 }
@@ -50,7 +82,7 @@ impl Lang {
 // Constants
 //
 
-pub const BAD_PAGES: [u16; 1] = [2];
+pub const BAD_PAGES: [u16; 2] = [2, 41];
 const PREFIX: &str = "https://dsal.uchicago.edu/cgi-bin/app/steingass_query.py?page=";
 const _MIN_PAGE: u16 = 1;
 const _MAX_PAGE: u16 = 1539;
@@ -103,11 +135,25 @@ pub fn get_lang(parsed: &Html) -> Lang {
 
     if let Some(result) = parsed.select(&selector).next() {
         let text: String = result.text().collect();
-        let as_char = text.trim().chars().next().unwrap();
+        let trimmed = text.trim();
 
-        lang = match as_char {
-            'A' => Lang::Arabic,
-            _ => panic!("Unrecognized language: {}", as_char),
+        lang = match trimmed {
+            "A" => Lang::Arabic,
+            "E" => Lang::English,
+            "G" => Lang::Greek,
+            "H" => Lang::Hindi,
+            "M" => Lang::Mongolian,
+            "P" => Lang::Persian,
+            "R" => Lang::Russian,
+            "S" => Lang::Sanskrit,
+            "SY" => Lang::Syriac,
+            "T" => Lang::Turkish,
+            "A T" => Lang::ArabicTurkish,
+            "a" => Lang::PersianArabic,
+            "m" => Lang::PersianMongolian,
+            "t" => Lang::PersianTurkish,
+            "t a" => Lang::PersianTurkishArabic,
+            _ => panic!("Unrecognized language: {}", trimmed),
         };
     }
 
@@ -126,10 +172,12 @@ pub fn headword_parts(parsed: &Html) -> Result<(String, String), anyhow::Error> 
     let selector_i = Selector::parse("hw i").unwrap();
 
     let persian = parsed.select(&selector_pa).next().unwrap();
-    let latin = parsed.select(&selector_i).next().unwrap();
-
     let persian_text = pandoc(&persian.html())?;
-    let latin_text = pandoc(&latin.html())?;
+
+    let latin_text = match parsed.select(&selector_i).next() {
+        Some(latin) => pandoc(&latin.html())?,
+        None => "N/A".to_owned(),
+    };
 
     Ok((persian_text, latin_text))
 }
