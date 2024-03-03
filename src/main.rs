@@ -8,8 +8,8 @@ use rusqlite::Connection;
 use scraper::Html;
 
 use steingass_scraper::{
-    count_page_entries, ensure_table, except_headword, fetch_html, headword_parts, insert_row,
-    select_full_headword, select_results, Entry, BAD_PAGES,
+    count_page_entries, ensure_table, except_headword, fetch_html, get_lang, headword_parts,
+    insert_row, select_full_headword, select_results, Entry, BAD_PAGES,
 };
 
 fn main() -> Result<(), anyhow::Error> {
@@ -47,6 +47,7 @@ fn main() -> Result<(), anyhow::Error> {
             let html = result.html();
             let parsed = Html::parse_fragment(&html);
 
+            let lang = get_lang(&parsed);
             let headword_full = select_full_headword(&parsed)?;
             let (headword_persian, headword_latin) = headword_parts(&parsed)?;
             let definitions = except_headword(&html)?;
@@ -54,6 +55,7 @@ fn main() -> Result<(), anyhow::Error> {
             let entry = Entry {
                 page,
                 raw_html: html,
+                lang,
                 headword_full,
                 headword_persian,
                 headword_latin,

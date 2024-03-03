@@ -23,20 +23,37 @@ use tempfile::NamedTempFile;
 pub struct Entry {
     pub page: u16,
     pub raw_html: String,
+    pub lang: Lang,
     pub headword_full: String,
     pub headword_persian: String,
     pub headword_latin: String,
     pub definitions: String,
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Default)]
+pub enum Lang {
+    #[default]
+    Unmarked,
+    Arabic,
+}
+
+impl Lang {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::Unmarked => "Unmarked (i.e., Persian)",
+            Self::Arabic => "Arabic",
+        }
+    }
+}
+
 //
 // Constants
 //
 
+pub const BAD_PAGES: [u16; 1] = [2];
 const PREFIX: &str = "https://dsal.uchicago.edu/cgi-bin/app/steingass_query.py?page=";
 const _MIN_PAGE: u16 = 1;
 const _MAX_PAGE: u16 = 1539;
-pub const BAD_PAGES: [u16; 1] = [2];
 
 //
 // Public functions
@@ -48,6 +65,7 @@ pub fn ensure_table(conn: &Connection) -> Result<(), anyhow::Error> {
             id INTEGER NOT NULL PRIMARY KEY,
             page INTEGER NOT NULL,
             raw_html TEXT NOT NULL,
+            lang TEXT NOT NULL,
             headword_full TEXT NOT NULL,
             headword_persian TEXT NOT NULL,
             headword_latin TEXT NOT NULL,
@@ -76,6 +94,24 @@ pub fn count_page_entries(conn: &Connection, page: u16) -> Result<usize, anyhow:
     let mut stmt = conn.prepare("SELECT COUNT(*) FROM entries WHERE page = ?")?;
     let count: usize = stmt.query_row([page], |row| row.get(0))?;
     Ok(count)
+}
+
+#[must_use]
+pub fn get_lang(parsed: &Html) -> Lang {
+    let selector = Selector::parse("lang").unwrap();
+    let mut lang = Lang::Unmarked;
+
+    if let Some(result) = parsed.select(&selector).next() {
+        let text: String = result.text().collect();
+        let as_char = text.trim().chars().next().unwrap();
+
+        lang = match as_char {
+            'A' => Lang::Arabic,
+            _ => panic!("Unrecognized language: {}", as_char),
+        };
+    }
+
+    lang
 }
 
 pub fn select_full_headword(parsed: &Html) -> Result<String, anyhow::Error> {
@@ -117,14 +153,16 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
         "INSERT INTO entries (
             page,
             raw_html,
+            lang,
             headword_full,
             headword_persian,
             headword_latin,
             definitions
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         (
             entry.page,
             entry.raw_html,
+            entry.lang.as_str(),
             entry.headword_full,
             entry.headword_persian,
             entry.headword_latin,
@@ -135,7 +173,9 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
     Ok(())
 }
 
+//
 // Private functions
+//
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
     let mut tempfile = NamedTempFile::new()?;
@@ -154,4 +194,23 @@ fn pandoc(input: &str) -> Result<String, anyhow::Error> {
     let cleaned = output.trim().trim_start_matches(',').trim_start();
 
     Ok(cleaned.to_owned())
+}
+
+//
+// Tests
+//
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tadbir_arabic() {
+        let p290 = fetch_html(290).unwrap();
+        let results = select_results(&p290);
+        let tadbir = results[0].html();
+        let parsed = Html::parse_fragment(&tadbir);
+        let lang = get_lang(&parsed);
+        assert_eq!(lang, Lang::Arabic);
+    }
 }
