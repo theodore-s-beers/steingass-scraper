@@ -18,7 +18,7 @@ fn main() -> Result<(), anyhow::Error> {
     ensure_table(&conn)?;
 
     let start_page = 1;
-    let stop_page = 100;
+    let stop_page = 200;
 
     for page in start_page..=stop_page {
         println!("----------------");

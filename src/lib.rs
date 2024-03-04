@@ -39,20 +39,22 @@ pub enum Lang {
     English,   // E
     Greek,     // G
     Hindi,     // H
+    Latin,     // L
     Mongolian, // M
     Persian,   // P
     Russian,   // R
     Sanskrit,  // S
     Syriac,    // SY
     Turkish,   // T
+    Urdu,      // U
 
     ArabicTurkish, // A T
 
-    PersianArabic,    // a
+    PersianArabic,    // a, A a
     PersianMongolian, // m
     PersianTurkish,   // t
 
-    PersianTurkishArabic, // t a
+    PersianArabicTurkish, // a t, t a
 }
 
 impl Lang {
@@ -63,17 +65,19 @@ impl Lang {
             Self::English => "English",
             Self::Greek => "Greek",
             Self::Hindi => "Hindi",
+            Self::Latin => "Latin",
             Self::Mongolian => "Mongolian",
             Self::Persian => "Persian",
             Self::Russian => "Russian",
             Self::Sanskrit => "Sanskrit",
             Self::Syriac => "Syriac",
             Self::Turkish => "Turkish",
+            Self::Urdu => "Urdu",
             Self::ArabicTurkish => "Arabic & Turkish",
             Self::PersianArabic => "Arabic & Persian",
             Self::PersianMongolian => "Mongolian & Persian",
             Self::PersianTurkish => "Persian & Turkish",
-            Self::PersianTurkishArabic => "Arabic & Persian & Turkish",
+            Self::PersianArabicTurkish => "Arabic & Persian & Turkish",
         }
     }
 }
@@ -135,24 +139,26 @@ pub fn get_lang(parsed: &Html) -> Lang {
 
     if let Some(result) = parsed.select(&selector).next() {
         let text: String = result.text().collect();
-        let trimmed = text.trim();
+        let trimmed = text.trim().trim_end_matches('.');
 
         lang = match trimmed {
             "A" => Lang::Arabic,
             "E" => Lang::English,
             "G" => Lang::Greek,
             "H" => Lang::Hindi,
+            "L" => Lang::Latin,
             "M" => Lang::Mongolian,
             "P" => Lang::Persian,
             "R" => Lang::Russian,
             "S" => Lang::Sanskrit,
             "SY" => Lang::Syriac,
             "T" => Lang::Turkish,
+            "U" => Lang::Urdu,
             "A T" => Lang::ArabicTurkish,
-            "a" => Lang::PersianArabic,
+            "a" | "A a" => Lang::PersianArabic,
             "m" => Lang::PersianMongolian,
             "t" => Lang::PersianTurkish,
-            "t a" => Lang::PersianTurkishArabic,
+            "a t" | "t a" => Lang::PersianArabicTurkish,
             _ => panic!("Unrecognized language: {}", trimmed),
         };
     }
