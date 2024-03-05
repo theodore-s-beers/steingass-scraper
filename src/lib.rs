@@ -35,25 +35,31 @@ pub enum Lang {
     #[default]
     Unmarked,
 
-    Arabic,    // A
-    English,   // E
-    Greek,     // G
-    Hindi,     // H
-    Latin,     // L
-    Mongolian, // M
-    Persian,   // P
-    Russian,   // R
-    Sanskrit,  // S
-    Syriac,    // SY
-    Turkish,   // T
-    Urdu,      // U
+    Arabic,     // A
+    English,    // E
+    Greek,      // G
+    Hebrew,     // HE
+    Hindi,      // H
+    Latin,      // L
+    Mongolian,  // M
+    Persian,    // P
+    Portuguese, // PORT
+    Russian,    // R
+    Sanskrit,   // S
+    Syriac,     // SY
+    Turkish,    // T
+    Urdu,       // U
 
+    ArabicGreek,   // A G
     ArabicTurkish, // A T
 
-    PersianArabic,    // a, A a
+    PersianArabic,    // a, ā, A a, A P
+    PersianGreek,     // g
+    PersianHindi,     // h
     PersianMongolian, // m
     PersianTurkish,   // t
 
+    PersianArabicHindi,   // a h
     PersianArabicTurkish, // a t, t a
 }
 
@@ -61,22 +67,32 @@ impl Lang {
     const fn as_str(self) -> &'static str {
         match self {
             Self::Unmarked => "Unmarked (i.e., Persian)",
+
             Self::Arabic => "Arabic",
             Self::English => "English",
             Self::Greek => "Greek",
+            Self::Hebrew => "Hebrew",
             Self::Hindi => "Hindi",
             Self::Latin => "Latin",
             Self::Mongolian => "Mongolian",
             Self::Persian => "Persian",
+            Self::Portuguese => "Portuguese",
             Self::Russian => "Russian",
             Self::Sanskrit => "Sanskrit",
             Self::Syriac => "Syriac",
             Self::Turkish => "Turkish",
             Self::Urdu => "Urdu",
+
+            Self::ArabicGreek => "Arabic & Greek",
             Self::ArabicTurkish => "Arabic & Turkish",
+
             Self::PersianArabic => "Arabic & Persian",
+            Self::PersianGreek => "Greek & Persian",
+            Self::PersianHindi => "Hindi & Persian",
             Self::PersianMongolian => "Mongolian & Persian",
             Self::PersianTurkish => "Persian & Turkish",
+
+            Self::PersianArabicHindi => "Arabic & Hindi & Persian",
             Self::PersianArabicTurkish => "Arabic & Persian & Turkish",
         }
     }
@@ -86,7 +102,7 @@ impl Lang {
 // Constants
 //
 
-pub const BAD_PAGES: [u16; 2] = [2, 41];
+pub const BAD_PAGES: [u16; 6] = [2, 41, 486, 520, 665, 666];
 const PREFIX: &str = "https://dsal.uchicago.edu/cgi-bin/app/steingass_query.py?page=";
 const _MIN_PAGE: u16 = 1;
 const _MAX_PAGE: u16 = 1539;
@@ -145,20 +161,30 @@ pub fn get_lang(parsed: &Html) -> Lang {
             "A" => Lang::Arabic,
             "E" => Lang::English,
             "G" => Lang::Greek,
+            "HE" => Lang::Hebrew,
             "H" => Lang::Hindi,
             "L" => Lang::Latin,
             "M" => Lang::Mongolian,
             "P" => Lang::Persian,
+            "PORT" => Lang::Portuguese,
             "R" => Lang::Russian,
             "S" => Lang::Sanskrit,
             "SY" => Lang::Syriac,
             "T" => Lang::Turkish,
             "U" => Lang::Urdu,
+
+            "A G" => Lang::ArabicGreek,
             "A T" => Lang::ArabicTurkish,
-            "a" | "A a" => Lang::PersianArabic,
+
+            "a" | "ā" | "A a" | "A P" => Lang::PersianArabic,
+            "g" => Lang::PersianGreek,
+            "h" => Lang::PersianHindi,
             "m" => Lang::PersianMongolian,
             "t" => Lang::PersianTurkish,
+
+            "a h" => Lang::PersianArabicHindi,
             "a t" | "t a" => Lang::PersianArabicTurkish,
+
             _ => panic!("Unrecognized language: {}", trimmed),
         };
     }
