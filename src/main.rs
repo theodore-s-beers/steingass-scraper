@@ -9,7 +9,7 @@ use scraper::Html;
 
 use steingass_scraper::{
     count_page_entries, ensure_table, except_headword, fetch_html, get_lang, headword_parts,
-    insert_row, select_full_headword, select_results, Entry, BAD_PAGES,
+    insert_row, select_full_headword, select_results, Entry, BAD_PAGES, MAX_PAGE, MIN_PAGE,
 };
 
 fn main() -> Result<(), anyhow::Error> {
@@ -17,8 +17,8 @@ fn main() -> Result<(), anyhow::Error> {
     let conn = Connection::open("entries.sqlite")?;
     ensure_table(&conn)?;
 
-    let start_page = 1;
-    let stop_page = 800;
+    let start_page = MIN_PAGE;
+    let stop_page = MAX_PAGE;
 
     for page in start_page..=stop_page {
         println!("----------------");

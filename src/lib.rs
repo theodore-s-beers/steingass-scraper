@@ -35,7 +35,7 @@ pub enum Lang {
     #[default]
     Unmarked,
 
-    Arabic,     // A
+    Arabic,     // A, B (single-occurrence typo)
     English,    // E
     Greek,      // G
     Hebrew,     // HE
@@ -46,6 +46,7 @@ pub enum Lang {
     Portuguese, // PORT
     Russian,    // R
     Sanskrit,   // S
+    Spanish,    // SP
     Syriac,     // SY
     Turkish,    // T
     Urdu,       // U
@@ -53,14 +54,16 @@ pub enum Lang {
     ArabicGreek,   // A G
     ArabicTurkish, // A T
 
-    PersianArabic,    // a, ā, A a, A P
+    PersianArabic,    // a, ā, o (single-occurrence typo), A a, A P
     PersianGreek,     // g
     PersianHindi,     // h
     PersianMongolian, // m
+    PersianRussian,   // r
     PersianTurkish,   // t
 
+    PersianArabicGreek,   // g a
     PersianArabicHindi,   // a h
-    PersianArabicTurkish, // a t, t a
+    PersianArabicTurkish, // a t, t a, a p t
 }
 
 impl Lang {
@@ -79,6 +82,7 @@ impl Lang {
             Self::Portuguese => "Portuguese",
             Self::Russian => "Russian",
             Self::Sanskrit => "Sanskrit",
+            Self::Spanish => "Spanish",
             Self::Syriac => "Syriac",
             Self::Turkish => "Turkish",
             Self::Urdu => "Urdu",
@@ -90,8 +94,10 @@ impl Lang {
             Self::PersianGreek => "Greek & Persian",
             Self::PersianHindi => "Hindi & Persian",
             Self::PersianMongolian => "Mongolian & Persian",
+            Self::PersianRussian => "Persian & Russian",
             Self::PersianTurkish => "Persian & Turkish",
 
+            Self::PersianArabicGreek => "Arabic & Greek & Persian",
             Self::PersianArabicHindi => "Arabic & Hindi & Persian",
             Self::PersianArabicTurkish => "Arabic & Persian & Turkish",
         }
@@ -102,10 +108,11 @@ impl Lang {
 // Constants
 //
 
+pub const MIN_PAGE: u16 = 1;
+pub const MAX_PAGE: u16 = 1539;
 pub const BAD_PAGES: [u16; 6] = [2, 41, 486, 520, 665, 666];
+
 const PREFIX: &str = "https://dsal.uchicago.edu/cgi-bin/app/steingass_query.py?page=";
-const _MIN_PAGE: u16 = 1;
-const _MAX_PAGE: u16 = 1539;
 
 //
 // Public functions
@@ -158,7 +165,7 @@ pub fn get_lang(parsed: &Html) -> Lang {
         let trimmed = text.trim().trim_end_matches('.');
 
         lang = match trimmed {
-            "A" => Lang::Arabic,
+            "A" | "B" => Lang::Arabic, // "B" occurs once, on p. 975; apparently a typo
             "E" => Lang::English,
             "G" => Lang::Greek,
             "HE" => Lang::Hebrew,
@@ -169,6 +176,7 @@ pub fn get_lang(parsed: &Html) -> Lang {
             "PORT" => Lang::Portuguese,
             "R" => Lang::Russian,
             "S" => Lang::Sanskrit,
+            "SP" => Lang::Spanish,
             "SY" => Lang::Syriac,
             "T" => Lang::Turkish,
             "U" => Lang::Urdu,
@@ -176,14 +184,18 @@ pub fn get_lang(parsed: &Html) -> Lang {
             "A G" => Lang::ArabicGreek,
             "A T" => Lang::ArabicTurkish,
 
-            "a" | "ā" | "A a" | "A P" => Lang::PersianArabic,
+            // "o" occurs once, on p. 1,271; apparently a typo
+            // "ā," a more obvious typo, occurs several times
+            "a" | "ā" | "o" | "A a" | "A P" => Lang::PersianArabic,
             "g" => Lang::PersianGreek,
             "h" => Lang::PersianHindi,
             "m" => Lang::PersianMongolian,
+            "r" => Lang::PersianRussian,
             "t" => Lang::PersianTurkish,
 
+            "g a" => Lang::PersianArabicGreek,
             "a h" => Lang::PersianArabicHindi,
-            "a t" | "t a" => Lang::PersianArabicTurkish,
+            "a t" | "t a" | "a p t" => Lang::PersianArabicTurkish,
 
             _ => panic!("Unrecognized language: {}", trimmed),
         };
