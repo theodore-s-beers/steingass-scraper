@@ -4,6 +4,7 @@
     clippy::missing_panics_doc,
     clippy::uninlined_format_args
 )]
+#![feature(variant_count)]
 
 use core::str;
 use std::io::Write;
@@ -295,6 +296,122 @@ fn pandoc(input: &str) -> Result<String, anyhow::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::mem;
+
+    impl Lang {
+        fn from_str(s: &str) -> Self {
+            match s {
+                "Arabic" => Self::Arabic,
+                "English" => Self::English,
+                "Greek" => Self::Greek,
+                "Hebrew" => Self::Hebrew,
+                "Hindi" => Self::Hindi,
+                "Latin" => Self::Latin,
+                "Mongolian" => Self::Mongolian,
+                "Persian" => Self::Persian,
+                "Portuguese" => Self::Portuguese,
+                "Russian" => Self::Russian,
+                "Sanskrit" => Self::Sanskrit,
+                "Spanish" => Self::Spanish,
+                "Syriac" => Self::Syriac,
+                "Turkish" => Self::Turkish,
+                "Urdu" => Self::Urdu,
+
+                "Arabic & Greek" => Self::ArabicGreek,
+                "Arabic & Turkish" => Self::ArabicTurkish,
+
+                "Arabic & Persian" => Self::PersianArabic,
+                "Greek & Persian" => Self::PersianGreek,
+                "Hindi & Persian" => Self::PersianHindi,
+                "Mongolian & Persian" => Self::PersianMongolian,
+                "Persian & Russian" => Self::PersianRussian,
+                "Persian & Turkish" => Self::PersianTurkish,
+
+                "Arabic & Greek & Persian" => Self::PersianArabicGreek,
+                "Arabic & Hindi & Persian" => Self::PersianArabicHindi,
+                "Arabic & Persian & Turkish" => Self::PersianArabicTurkish,
+
+                _ => Self::Unmarked,
+            }
+        }
+    }
+
+    #[test]
+    fn lang_values() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT page, raw_html, lang FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let page: u16 = row.get(0).unwrap();
+                let raw_html: String = row.get(1).unwrap();
+                let lang: String = row.get(2).unwrap();
+                Ok((page, raw_html, lang))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (page, raw_html, lang) = entry.unwrap();
+
+            let lang_from_str = Lang::from_str(&lang);
+            assert_eq!(
+                lang_from_str.as_str(),
+                lang,
+                "Lang-to-str back-and-forth failure, p. {}",
+                page
+            );
+
+            let parsed = Html::parse_fragment(&raw_html);
+            let lang_regen = get_lang(&parsed);
+            assert_eq!(
+                lang_regen, lang_from_str,
+                "Lang re-parsing failure, p. {}",
+                page
+            );
+        }
+    }
+
+    #[test]
+    fn lang_variants() {
+        let variants = mem::variant_count::<Lang>();
+
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT COUNT(DISTINCT lang) FROM entries")
+            .unwrap();
+        let count: usize = stmt.query_row([], |row| row.get(0)).unwrap();
+
+        assert_eq!(count, variants);
+    }
+
+    #[test]
+    fn min_max_pages() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+
+        let mut stmt_min = conn.prepare("SELECT MIN(page) FROM entries").unwrap();
+        let min: u16 = stmt_min.query_row([], |row| row.get(0)).unwrap();
+        assert_eq!(min, MIN_PAGE);
+
+        let mut stmt_max = conn.prepare("SELECT MAX(page) FROM entries").unwrap();
+        let max: u16 = stmt_max.query_row([], |row| row.get(0)).unwrap();
+        assert_eq!(max, MAX_PAGE);
+    }
+
+    #[test]
+    fn page_count() {
+        let total_pages = MAX_PAGE - MIN_PAGE + 1;
+        let good_pages = total_pages - BAD_PAGES.len() as u16;
+
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT COUNT(DISTINCT page) FROM entries")
+            .unwrap();
+        let count: u16 = stmt.query_row([], |row| row.get(0)).unwrap();
+
+        assert_eq!(count, good_pages);
+    }
 
     #[test]
     fn tadbir_arabic() {
