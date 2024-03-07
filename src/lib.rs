@@ -217,14 +217,15 @@ pub fn headword_parts(parsed: &Html) -> Result<(String, String), anyhow::Error> 
     let selector_i = Selector::parse("hw i").unwrap();
 
     let persian = parsed.select(&selector_pa).next().unwrap();
-    let persian_text = pandoc(&persian.html())?;
+    let persian_text: String = persian.text().collect();
+    let persian_cleaned = clean(&persian_text);
 
     let latin_text = match parsed.select(&selector_i).next() {
         Some(latin) => pandoc(&latin.html())?,
         None => "N/A".to_owned(),
     };
 
-    Ok((persian_text, latin_text))
+    Ok((persian_cleaned, latin_text))
 }
 
 pub fn except_headword(input: &str) -> Result<String, anyhow::Error> {
@@ -269,6 +270,16 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 //
 // Private functions
 //
+
+#[allow(clippy::let_and_return)]
+fn clean(input: &str) -> String {
+    let trimmed = input.trim();
+    let no_zwj = trimmed.replace('\u{200D}', "");
+    let no_rlm = no_zwj.replace('\u{200F}', "");
+    let switch_h = no_rlm.replace('\u{FBA9}', "\u{0647}");
+
+    switch_h
+}
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
     let mut tempfile = NamedTempFile::new()?;
