@@ -212,20 +212,23 @@ pub fn select_full_headword(parsed: &Html) -> Result<String, anyhow::Error> {
     Ok(hw_full_text)
 }
 
-pub fn headword_parts(parsed: &Html) -> Result<(String, String), anyhow::Error> {
+#[must_use]
+pub fn get_hw_per(parsed: &Html) -> String {
     let selector_pa = Selector::parse("hw pa").unwrap();
-    let selector_i = Selector::parse("hw i").unwrap();
-
     let persian = parsed.select(&selector_pa).next().unwrap();
     let persian_text: String = persian.text().collect();
-    let persian_cleaned = clean(&persian_text);
 
+    clean(&persian_text)
+}
+
+pub fn get_hw_lat(parsed: &Html) -> Result<String, anyhow::Error> {
+    let selector_i = Selector::parse("hw i").unwrap();
     let latin_text = match parsed.select(&selector_i).next() {
         Some(latin) => pandoc(&latin.html())?,
         None => "N/A".to_owned(),
     };
 
-    Ok((persian_cleaned, latin_text))
+    Ok(latin_text)
 }
 
 pub fn except_headword(input: &str) -> Result<String, anyhow::Error> {
@@ -344,6 +347,35 @@ mod tests {
 
                 _ => Self::Unmarked,
             }
+        }
+    }
+
+    #[test]
+    fn hw_per_values() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT page, raw_html, headword_persian FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let page: u16 = row.get(0).unwrap();
+                let raw_html: String = row.get(1).unwrap();
+                let headword_persian: String = row.get(2).unwrap();
+                Ok((page, raw_html, headword_persian))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (page, raw_html, headword_persian) = entry.unwrap();
+            let parsed = Html::parse_fragment(&raw_html);
+            let persian_regen = get_hw_per(&parsed);
+
+            assert_eq!(
+                persian_regen, headword_persian,
+                "Mismatch (p. {}): {} != {}",
+                page, persian_regen, headword_persian
+            );
         }
     }
 
