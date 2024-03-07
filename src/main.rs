@@ -43,15 +43,49 @@ fn main() -> Result<(), anyhow::Error> {
         let db_count = count_page_entries(&conn, page)?;
         println!("Rows for p. {} in DB: {}", page, db_count);
 
-        if db_count == results_count {
-            println!("No further entries for p. {}", page);
-            continue;
-        }
+        // Scraping has been completed; this is to confirm that DB entries match fetched results
+        assert_eq!(db_count, results_count);
 
-        assert!(db_count == 0, "Partial coverage in DB for p. {}", page);
+        // if db_count == results_count {
+        //     println!("No further entries for p. {}", page);
+        //     continue;
+        // }
+
+        // assert!(db_count == 0, "Partial coverage in DB for p. {}", page);
 
         for (i, result) in results.iter().enumerate() {
             let html = result.html();
+
+            // The entry for "abjad" on p. 5 has an img tag, which can cause problems
+            // Everything else is fine, and I've manually checked the "abjad" entry
+            if html.contains(".jpg") {
+                println!(
+                    "p. {}, entry {}/{}: Skipping problematic entry",
+                    page,
+                    i + 1,
+                    results_count
+                );
+                continue;
+            }
+
+            let mut stmt = conn.prepare(
+                "SELECT COUNT(*)
+                FROM entries
+                WHERE raw_html = ?",
+            )?;
+            let count: u32 = stmt.query_row([&html], |row| row.get(0))?;
+            if count == 1 {
+                println!(
+                    "p. {}, entry {}/{}: Exactly one exact match in DB",
+                    page,
+                    i + 1,
+                    results_count,
+                );
+                continue;
+            }
+
+            assert_eq!(count, 1, "{}", html); // Remaining code in this loop is unreachable
+
             let parsed = Html::parse_fragment(&html);
 
             let lang = get_lang(&parsed);
@@ -73,9 +107,9 @@ fn main() -> Result<(), anyhow::Error> {
             println!("Inserted entry {}/{} for p. {}", i + 1, results_count, page);
         }
 
-        let db_count_new = count_page_entries(&conn, page)?;
-        println!("Updated row count for p. {} in DB: {}", page, db_count_new);
-        assert_eq!(db_count_new, results_count);
+        // let db_count_new = count_page_entries(&conn, page)?;
+        // println!("Updated row count for p. {} in DB: {}", page, db_count_new);
+        // assert_eq!(db_count_new, results_count);
     }
 
     println!("----------------");
