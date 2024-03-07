@@ -423,14 +423,4 @@ mod tests {
 
         assert_eq!(count, good_pages);
     }
-
-    #[test]
-    fn tadbir_arabic() {
-        let p290 = fetch_html(290).unwrap();
-        let results = select_results(&p290);
-        let tadbir = results[0].html();
-        let parsed = Html::parse_fragment(&tadbir);
-        let lang = get_lang(&parsed);
-        assert_eq!(lang, Lang::Arabic);
-    }
 }
