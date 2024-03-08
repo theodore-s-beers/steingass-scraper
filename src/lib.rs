@@ -218,7 +218,7 @@ pub fn get_hw_per(parsed: &Html) -> String {
     let persian = parsed.select(&selector_pa).next().unwrap();
     let persian_text: String = persian.text().collect();
 
-    clean(&persian_text)
+    clean_persian(&persian_text)
 }
 
 pub fn get_hw_lat(parsed: &Html) -> Result<String, anyhow::Error> {
@@ -275,22 +275,40 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 //
 
 #[allow(clippy::let_and_return, clippy::similar_names)]
-fn clean(input: &str) -> String {
+fn clean_persian(input: &str) -> String {
     let trimmed = input.trim();
+
+    // Removals; maintain order!
     let no_zwj = trimmed.replace('\u{200D}', "");
     let no_rlm = no_zwj.replace('\u{200F}', "");
-    let switch_h = no_rlm.replace('\u{FBA9}', "\u{0647}");
-    let switch_ch = switch_h.replace('\u{FB7D}', "\u{0686}");
-    let switch_p_init = switch_ch.replace('\u{FB58}', "\u{067E}");
-    let switch_p_med = switch_p_init.replace('\u{FB59}', "\u{067E}");
-    let switch_zh = switch_p_med.replace('\u{FB8A}', "\u{0698}");
-    let switch_g = switch_zh.replace('\u{FB94}', "\u{06AF}");
-    let switch_zh_fin = switch_g.replace('\u{FB8B}', "\u{0698}");
-    let switch_h_init = switch_zh_fin.replace('\u{FEEB}', "\u{0647}");
-    let switch_alif_madda = switch_h_init.replace('\u{FE81}', "\u{0622}");
-    let switch_hamza_y = switch_alif_madda.replace('\u{FE8A}', "\u{0626}");
+    let no_space_kasra = no_rlm.replace("\u{0020}\u{0650}", "");
+    let no_kasra = no_space_kasra.replace('\u{0650}', "");
 
-    switch_hamza_y
+    // Swaps
+    let swap_h_med = no_kasra.replace('\u{FBA9}', "\u{0647}");
+    let swap_ch = swap_h_med.replace('\u{FB7D}', "\u{0686}");
+    let swap_p_init = swap_ch.replace('\u{FB58}', "\u{067E}");
+    let swap_p_med = swap_p_init.replace('\u{FB59}', "\u{067E}");
+    let swap_zh = swap_p_med.replace('\u{FB8A}', "\u{0698}");
+    let swap_g = swap_zh.replace('\u{FB94}', "\u{06AF}");
+    let swap_zh_fin = swap_g.replace('\u{FB8B}', "\u{0698}");
+    let swap_h_init = swap_zh_fin.replace('\u{FEEB}', "\u{0647}");
+    let swap_madda = swap_h_init.replace('\u{FE81}', "\u{0622}");
+    let swap_hamza_y = swap_madda.replace('\u{FE8A}', "\u{0626}");
+    let swap_alif_fatha = swap_hamza_y.replace("\u{0627}\u{064E}", "\u{0622}");
+    let swap_ngoeh = swap_alif_fatha.replace('\u{06B1}', "\u{06AF}");
+    let swap_h_do = swap_ngoeh.replace('\u{06BE}', "\u{0647}");
+    let swap_dotless_b = swap_h_do.replace('\u{066E}', "\u{0628}");
+
+    // Fix space before kasratayn
+    let fix_kasratan = swap_dotless_b.replace("\u{0020}\u{064D}", "\u{064D}");
+
+    // Word-specific fixes
+    let fix_muwajahatan = fix_kasratan.replace("\u{0020}\u{064C}", "\u{064B}");
+    let fix_maris = fix_muwajahatan.replace("\u{06CC}\u{064E}", "\u{06CC}");
+    let fix_yasiran = fix_maris.replace("\u{0020}\u{064F}", "\u{064B}");
+
+    fix_yasiran.trim().to_owned()
 }
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
@@ -358,6 +376,13 @@ mod tests {
             }
         }
     }
+
+    const ARABIC_ALLOWED: [u32; 47] = [
+        0x621, 0x622, 0x623, 0x624, 0x625, 0x626, 0x627, 0x628, 0x629, 0x62A, 0x62B, 0x62C, 0x62D,
+        0x62E, 0x62F, 0x630, 0x631, 0x632, 0x633, 0x634, 0x635, 0x636, 0x637, 0x638, 0x639, 0x63A,
+        0x641, 0x642, 0x643, 0x644, 0x645, 0x646, 0x647, 0x648, 0x649, 0x64A, 0x64B, 0x64D, 0x651,
+        0x670, 0x67E, 0x686, 0x698, 0x6A9, 0x6AF, 0x6C0, 0x6CC,
+    ];
 
     #[test]
     fn hw_per_values() {
@@ -497,10 +522,10 @@ mod tests {
         for entry in entry_iter {
             let (id, headword_persian) = entry.unwrap();
 
+            // Need to deal with U+0674 later; it affects 300+ entries
             for c in headword_persian.chars() {
-                let arabic_block = 0x600..=0x6FF;
                 assert!(
-                    arabic_block.contains(&(c as u32)) || c.is_ascii(),
+                    ARABIC_ALLOWED.contains(&(c as u32)) || c as u32 == 0x674 || c as u32 == 0x20,
                     "Non-standard char in Persian headword (id {}): {:x}",
                     id,
                     c as u32
