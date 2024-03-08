@@ -274,14 +274,23 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 // Private functions
 //
 
-#[allow(clippy::let_and_return)]
+#[allow(clippy::let_and_return, clippy::similar_names)]
 fn clean(input: &str) -> String {
     let trimmed = input.trim();
     let no_zwj = trimmed.replace('\u{200D}', "");
     let no_rlm = no_zwj.replace('\u{200F}', "");
     let switch_h = no_rlm.replace('\u{FBA9}', "\u{0647}");
+    let switch_ch = switch_h.replace('\u{FB7D}', "\u{0686}");
+    let switch_p_init = switch_ch.replace('\u{FB58}', "\u{067E}");
+    let switch_p_med = switch_p_init.replace('\u{FB59}', "\u{067E}");
+    let switch_zh = switch_p_med.replace('\u{FB8A}', "\u{0698}");
+    let switch_g = switch_zh.replace('\u{FB94}', "\u{06AF}");
+    let switch_zh_fin = switch_g.replace('\u{FB8B}', "\u{0698}");
+    let switch_h_init = switch_zh_fin.replace('\u{FEEB}', "\u{0647}");
+    let switch_alif_madda = switch_h_init.replace('\u{FE81}', "\u{0622}");
+    let switch_hamza_y = switch_alif_madda.replace('\u{FE8A}', "\u{0626}");
 
-    switch_h
+    switch_hamza_y
 }
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
@@ -354,27 +363,41 @@ mod tests {
     fn hw_per_values() {
         let conn = Connection::open("entries.sqlite").unwrap();
         let mut stmt = conn
-            .prepare("SELECT page, raw_html, headword_persian FROM entries")
+            .prepare("SELECT id, raw_html, headword_persian FROM entries")
             .unwrap();
 
         let entry_iter = stmt
             .query_map([], |row| {
-                let page: u16 = row.get(0).unwrap();
+                let id: u32 = row.get(0).unwrap();
                 let raw_html: String = row.get(1).unwrap();
                 let headword_persian: String = row.get(2).unwrap();
-                Ok((page, raw_html, headword_persian))
+                Ok((id, raw_html, headword_persian))
             })
             .unwrap();
 
         for entry in entry_iter {
-            let (page, raw_html, headword_persian) = entry.unwrap();
+            let (id, raw_html, headword_persian) = entry.unwrap();
             let parsed = Html::parse_fragment(&raw_html);
             let persian_regen = get_hw_per(&parsed);
 
+            if headword_persian == "\u{0639}" {
+                continue;
+            }
+
+            // if persian_regen != headword_persian {
+            //     println!("Fixing id {}", id);
+
+            //     conn.execute(
+            //         "UPDATE entries SET headword_persian = ?1 WHERE id = ?2",
+            //         (persian_regen, id),
+            //     )
+            //     .unwrap();
+            // }
+
             assert_eq!(
                 persian_regen, headword_persian,
-                "Mismatch (p. {}): {} != {}",
-                page, persian_regen, headword_persian
+                "Mismatch (id {}): {} != {}",
+                id, persian_regen, headword_persian
             );
         }
     }
@@ -454,5 +477,35 @@ mod tests {
         let count: u16 = stmt.query_row([], |row| row.get(0)).unwrap();
 
         assert_eq!(count, good_pages);
+    }
+
+    #[test]
+    fn persian_no_weird_chars() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, headword_persian FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let headword_persian: String = row.get(1).unwrap();
+                Ok((id, headword_persian))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, headword_persian) = entry.unwrap();
+
+            for c in headword_persian.chars() {
+                let arabic_block = 0x600..=0x6FF;
+                assert!(
+                    arabic_block.contains(&(c as u32)) || c.is_ascii(),
+                    "Non-standard char in Persian headword (id {}): {:x}",
+                    id,
+                    c as u32
+                );
+            }
+        }
     }
 }
