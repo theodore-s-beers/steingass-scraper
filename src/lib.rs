@@ -209,7 +209,9 @@ pub fn select_full_headword(parsed: &Html) -> Result<String, anyhow::Error> {
     let selector = Selector::parse("hw").unwrap();
     let hw_full = parsed.select(&selector).next().unwrap();
     let hw_full_text = pandoc(&hw_full.html())?;
-    Ok(hw_full_text)
+    let cleaned = clean_hw_full(&hw_full_text);
+
+    Ok(cleaned)
 }
 
 #[must_use]
@@ -218,7 +220,7 @@ pub fn get_hw_per(parsed: &Html) -> String {
     let persian = parsed.select(&selector_pa).next().unwrap();
     let persian_text: String = persian.text().collect();
 
-    clean_complex(&persian_text)
+    clean_hw_per(&persian_text)
 }
 
 pub fn get_hw_lat(parsed: &Html) -> Result<String, anyhow::Error> {
@@ -270,9 +272,66 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
     Ok(())
 }
 
-#[allow(clippy::similar_names)]
-#[must_use]
-pub fn clean_simple(input: &str) -> String {
+//
+// Private functions
+//
+
+#[allow(clippy::let_and_return)]
+fn clean_hw_full(input: &str) -> String {
+    let precleaned = clean_simple(input);
+
+    let swap_alif_fatha = precleaned.replace("\u{0627}\u{064E}", "\u{0622}");
+    let swap_ch = swap_alif_fatha.replace('\u{FB7A}', "\u{0686}");
+    let swap_double_ayn = swap_ch.replace('\u{0022}', "\u{02BB}\u{02BB}");
+    let swap_a_hat = swap_double_ayn.replace('\u{00E2}', "\u{0101}");
+    let swap_quad_p = swap_a_hat.replace('\u{0680}', "\u{067E}");
+    let swap_dot_s = swap_quad_p.replace('\u{1E61}', "\u{1E63}");
+    let swap_dot_k = swap_dot_s.replace('\u{1E33}', "\u{006B}");
+
+    // Complex removals; maintain order!
+    let no_space_kasra = swap_dot_k.replace("\u{0020}\u{0650}", "");
+    let no_kasra = no_space_kasra.replace('\u{0650}', "");
+
+    // Word-specific fixes
+    let fix_maris = no_kasra.replace("\u{06CC}\u{064E}", "\u{06CC}");
+
+    let swap_left_arrow = fix_maris.replace('\u{2039}', "\u{012B}");
+
+    let fix_muwajahatan = swap_left_arrow.replace("\u{0020}\u{064C}", "\u{064B}");
+
+    let swap_a_grave = fix_muwajahatan.replace('\u{00E0}', "\u{0061}");
+
+    let swap_e_breve = swap_a_grave.replace("\u{0065}\u{0306}", "\u{0115}");
+
+    let fix_yasiran = swap_e_breve.replace("\u{0020}\u{064F}", "\u{064B}");
+
+    fix_yasiran
+}
+
+#[allow(clippy::let_and_return)]
+fn clean_hw_per(input: &str) -> String {
+    let precleaned = clean_simple(input);
+
+    // Complex removals; maintain order!
+    let no_space_kasra = precleaned.replace("\u{0020}\u{0650}", "");
+    let no_kasra = no_space_kasra.replace('\u{0650}', "");
+
+    // Complex swaps
+    let swap_alif_fatha = no_kasra.replace("\u{0627}\u{064E}", "\u{0622}");
+
+    // Fix space before kasratayn
+    let fix_kasratayn = swap_alif_fatha.replace("\u{0020}\u{064D}", "\u{064D}");
+
+    // Word-specific fixes
+    let fix_muwajahatan = fix_kasratayn.replace("\u{0020}\u{064C}", "\u{064B}");
+    let fix_maris = fix_muwajahatan.replace("\u{06CC}\u{064E}", "\u{06CC}");
+    let fix_yasiran = fix_maris.replace("\u{0020}\u{064F}", "\u{064B}");
+
+    fix_yasiran
+}
+
+#[allow(clippy::let_and_return, clippy::similar_names)]
+fn clean_simple(input: &str) -> String {
     let trimmed = input.trim();
 
     // Simple removals
@@ -294,35 +353,8 @@ pub fn clean_simple(input: &str) -> String {
     let swap_h_do = swap_ngoeh.replace('\u{06BE}', "\u{0647}");
     let swap_dotless_b = swap_h_do.replace('\u{066E}', "\u{0628}");
 
-    swap_dotless_b.trim().to_owned()
+    swap_dotless_b
 }
-
-#[allow(clippy::similar_names)]
-#[must_use]
-pub fn clean_complex(input: &str) -> String {
-    let precleaned = clean_simple(input);
-
-    // Complex removals; maintain order!
-    let no_space_kasra = precleaned.replace("\u{0020}\u{0650}", "");
-    let no_kasra = no_space_kasra.replace('\u{0650}', "");
-
-    // Complex swaps
-    let swap_alif_fatha = no_kasra.replace("\u{0627}\u{064E}", "\u{0622}");
-
-    // Fix space before kasratayn
-    let fix_kasratayn = swap_alif_fatha.replace("\u{0020}\u{064D}", "\u{064D}");
-
-    // Word-specific fixes
-    let fix_muwajahatan = fix_kasratayn.replace("\u{0020}\u{064C}", "\u{064B}");
-    let fix_maris = fix_muwajahatan.replace("\u{06CC}\u{064E}", "\u{06CC}");
-    let fix_yasiran = fix_maris.replace("\u{0020}\u{064F}", "\u{064B}");
-
-    fix_yasiran.trim().to_owned()
-}
-
-//
-// Private functions
-//
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
     let mut tempfile = NamedTempFile::new()?;
@@ -396,6 +428,126 @@ mod tests {
         0x641, 0x642, 0x643, 0x644, 0x645, 0x646, 0x647, 0x648, 0x649, 0x64A, 0x64B, 0x64D, 0x651,
         0x670, 0x67E, 0x686, 0x698, 0x6A9, 0x6AF, 0x6C0, 0x6CC,
     ];
+
+    const OTHER_ALLOWED: [u32; 79] = [
+        0x0020, 0x0026, 0x0027, 0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x0030,
+        0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x003B, 0x003D,
+        0x003F, 0x0041, 0x0050, 0x0051, 0x0053, 0x005A, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+        0x0066, 0x0067, 0x0068, 0x0069, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070,
+        0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0079, 0x007A, 0x00E1, 0x00EE,
+        0x00FC, 0x0101, 0x0113, 0x0115, 0x012B, 0x014D, 0x016B, 0x02BB, 0x02BC, 0x02CC, 0x0320,
+        0x0324, 0x1E25, 0x1E35, 0x1E43, 0x1E47, 0x1E5B, 0x1E63, 0x1E6D, 0x1E89, 0x1E93, 0x1E95,
+        0x1E96, 0x2014,
+    ];
+
+    #[test]
+    fn hw_full_chars() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, headword_full FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let headword_full: String = row.get(1).unwrap();
+                Ok((id, headword_full))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, headword_full) = entry.unwrap();
+
+            // The entry on ātish-ālūd is messed up; make sure to fix later
+            // The entry on najaz also seems off
+            // Will allow semicolon for now, but it should probably be removed
+            // Will allow ō for now, but it should probably be replaced with o
+            // Use of U+02CC is odd, but will allow it for now
+            // Apostrophe is used exactly once; might replace later
+            // Need to replace ṭ eventually, but it isn't wrong in a consistent way
+            // Same problem with î: wrong in two different ways
+            // Em dash should be removed eventually, but will allow it for now
+            // The use of ĕ is strange but ok; it's really in the printed Steingass
+
+            for c in headword_full.chars() {
+                assert!(
+                    ARABIC_ALLOWED.contains(&(c as u32))
+                        || OTHER_ALLOWED.contains(&(c as u32))
+                        || c as u32 == 0x0674,
+                    "Non-standard char in full headword (ID {}): U+{:04X}",
+                    id,
+                    c as u32
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn hw_full_values() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, headword_full FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let headword_full: String = row.get(1).unwrap();
+                Ok((id, headword_full))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, headword_full) = entry.unwrap();
+
+            let cleaned_simple = clean_simple(&headword_full);
+            let cleaned_further = clean_hw_full(&cleaned_simple);
+
+            // if cleaned_further != headword_full {
+            //     println!("Fixing ID {}", id);
+
+            //     conn.execute(
+            //         "UPDATE entries SET headword_full = ?1 WHERE id = ?2",
+            //         (cleaned_further, id),
+            //     )
+            //     .unwrap();
+            // }
+
+            assert_eq!(cleaned_further, headword_full, "Mismatch in ID {}", id);
+        }
+    }
+
+    #[test]
+    fn hw_per_chars() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, headword_persian FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let headword_persian: String = row.get(1).unwrap();
+                Ok((id, headword_persian))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, headword_persian) = entry.unwrap();
+
+            // Need to deal with U+0674 later; it affects 300+ entries
+            for c in headword_persian.chars() {
+                assert!(
+                    ARABIC_ALLOWED.contains(&(c as u32))
+                        || c as u32 == 0x0674
+                        || c as u32 == 0x0020,
+                    "Non-standard char in Persian headword (ID {}): U+{:04X}",
+                    id,
+                    c as u32
+                );
+            }
+        }
+    }
 
     #[test]
     fn hw_per_values() {
@@ -515,35 +667,5 @@ mod tests {
         let count: u16 = stmt.query_row([], |row| row.get(0)).unwrap();
 
         assert_eq!(count, good_pages);
-    }
-
-    #[test]
-    fn persian_no_weird_chars() {
-        let conn = Connection::open("entries.sqlite").unwrap();
-        let mut stmt = conn
-            .prepare("SELECT id, headword_persian FROM entries")
-            .unwrap();
-
-        let entry_iter = stmt
-            .query_map([], |row| {
-                let id: u32 = row.get(0).unwrap();
-                let headword_persian: String = row.get(1).unwrap();
-                Ok((id, headword_persian))
-            })
-            .unwrap();
-
-        for entry in entry_iter {
-            let (id, headword_persian) = entry.unwrap();
-
-            // Need to deal with U+0674 later; it affects 300+ entries
-            for c in headword_persian.chars() {
-                assert!(
-                    ARABIC_ALLOWED.contains(&(c as u32)) || c as u32 == 0x674 || c as u32 == 0x20,
-                    "Non-standard char in Persian headword (id {}): {:x}",
-                    id,
-                    c as u32
-                );
-            }
-        }
     }
 }
