@@ -218,7 +218,7 @@ pub fn get_hw_per(parsed: &Html) -> String {
     let persian = parsed.select(&selector_pa).next().unwrap();
     let persian_text: String = persian.text().collect();
 
-    clean_persian(&persian_text)
+    clean_complex(&persian_text)
 }
 
 pub fn get_hw_lat(parsed: &Html) -> Result<String, anyhow::Error> {
@@ -270,19 +270,17 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
     Ok(())
 }
 
-#[allow(clippy::let_and_return, clippy::similar_names)]
+#[allow(clippy::similar_names)]
 #[must_use]
-pub fn clean_persian(input: &str) -> String {
+pub fn clean_simple(input: &str) -> String {
     let trimmed = input.trim();
 
-    // Removals; maintain order!
+    // Simple removals
     let no_zwj = trimmed.replace('\u{200D}', "");
     let no_rlm = no_zwj.replace('\u{200F}', "");
-    let no_space_kasra = no_rlm.replace("\u{0020}\u{0650}", "");
-    let no_kasra = no_space_kasra.replace('\u{0650}', "");
 
-    // Swaps
-    let swap_h_med = no_kasra.replace('\u{FBA9}', "\u{0647}");
+    // Simple swaps
+    let swap_h_med = no_rlm.replace('\u{FBA9}', "\u{0647}");
     let swap_ch = swap_h_med.replace('\u{FB7D}', "\u{0686}");
     let swap_p_init = swap_ch.replace('\u{FB58}', "\u{067E}");
     let swap_p_med = swap_p_init.replace('\u{FB59}', "\u{067E}");
@@ -292,13 +290,27 @@ pub fn clean_persian(input: &str) -> String {
     let swap_h_init = swap_zh_fin.replace('\u{FEEB}', "\u{0647}");
     let swap_madda = swap_h_init.replace('\u{FE81}', "\u{0622}");
     let swap_hamza_y = swap_madda.replace('\u{FE8A}', "\u{0626}");
-    let swap_alif_fatha = swap_hamza_y.replace("\u{0627}\u{064E}", "\u{0622}");
-    let swap_ngoeh = swap_alif_fatha.replace('\u{06B1}', "\u{06AF}");
+    let swap_ngoeh = swap_hamza_y.replace('\u{06B1}', "\u{06AF}");
     let swap_h_do = swap_ngoeh.replace('\u{06BE}', "\u{0647}");
     let swap_dotless_b = swap_h_do.replace('\u{066E}', "\u{0628}");
 
+    swap_dotless_b.trim().to_owned()
+}
+
+#[allow(clippy::similar_names)]
+#[must_use]
+pub fn clean_complex(input: &str) -> String {
+    let precleaned = clean_simple(input);
+
+    // Complex removals; maintain order!
+    let no_space_kasra = precleaned.replace("\u{0020}\u{0650}", "");
+    let no_kasra = no_space_kasra.replace('\u{0650}', "");
+
+    // Complex swaps
+    let swap_alif_fatha = no_kasra.replace("\u{0627}\u{064E}", "\u{0622}");
+
     // Fix space before kasratayn
-    let fix_kasratan = swap_dotless_b.replace("\u{0020}\u{064D}", "\u{064D}");
+    let fix_kasratan = swap_alif_fatha.replace("\u{0020}\u{064D}", "\u{064D}");
 
     // Word-specific fixes
     let fix_muwajahatan = fix_kasratan.replace("\u{0020}\u{064C}", "\u{064B}");
