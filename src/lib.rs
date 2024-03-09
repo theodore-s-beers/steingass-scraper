@@ -310,10 +310,10 @@ pub fn clean_complex(input: &str) -> String {
     let swap_alif_fatha = no_kasra.replace("\u{0627}\u{064E}", "\u{0622}");
 
     // Fix space before kasratayn
-    let fix_kasratan = swap_alif_fatha.replace("\u{0020}\u{064D}", "\u{064D}");
+    let fix_kasratayn = swap_alif_fatha.replace("\u{0020}\u{064D}", "\u{064D}");
 
     // Word-specific fixes
-    let fix_muwajahatan = fix_kasratan.replace("\u{0020}\u{064C}", "\u{064B}");
+    let fix_muwajahatan = fix_kasratayn.replace("\u{0020}\u{064C}", "\u{064B}");
     let fix_maris = fix_muwajahatan.replace("\u{06CC}\u{064E}", "\u{06CC}");
     let fix_yasiran = fix_maris.replace("\u{0020}\u{064F}", "\u{064B}");
 
