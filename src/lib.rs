@@ -441,6 +441,49 @@ mod tests {
     ];
 
     #[test]
+    fn confirm_html() {
+        let conn_dev = Connection::open("entries.sqlite").unwrap();
+        let conn_backup = Connection::open("html_backup.sqlite").unwrap();
+
+        let mut stmt_count_dev = conn_dev.prepare("SELECT COUNT(*) FROM entries").unwrap();
+        let mut stmt_count_backup = conn_backup.prepare("SELECT COUNT(*) FROM entries").unwrap();
+
+        let count_dev: u32 = stmt_count_dev.query_row([], |row| row.get(0)).unwrap();
+        let count_backup: u32 = stmt_count_backup.query_row([], |row| row.get(0)).unwrap();
+
+        assert_eq!(count_dev, count_backup);
+
+        let mut stmt_entries_dev = conn_dev
+            .prepare("SELECT id, raw_html FROM entries")
+            .unwrap();
+
+        let entry_iter_dev = stmt_entries_dev
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let raw_html: String = row.get(1).unwrap();
+                Ok((id, raw_html))
+            })
+            .unwrap();
+
+        for entry in entry_iter_dev {
+            let (id, html_dev) = entry.unwrap();
+
+            // Skipping problematic entry for abjad
+            if html_dev.contains(".jpg") {
+                continue;
+            }
+
+            let mut stmt_entry_backup = conn_backup
+                .prepare("SELECT raw_html FROM entries WHERE id = ?")
+                .unwrap();
+
+            let html_backup: String = stmt_entry_backup.query_row([id], |row| row.get(0)).unwrap();
+
+            assert_eq!(html_dev, html_backup);
+        }
+    }
+
+    #[test]
     fn hw_full_chars() {
         let conn = Connection::open("entries.sqlite").unwrap();
         let mut stmt = conn
