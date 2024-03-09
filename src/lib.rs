@@ -270,12 +270,9 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
     Ok(())
 }
 
-//
-// Private functions
-//
-
 #[allow(clippy::let_and_return, clippy::similar_names)]
-fn clean_persian(input: &str) -> String {
+#[must_use]
+pub fn clean_persian(input: &str) -> String {
     let trimmed = input.trim();
 
     // Removals; maintain order!
@@ -310,6 +307,10 @@ fn clean_persian(input: &str) -> String {
 
     fix_yasiran.trim().to_owned()
 }
+
+//
+// Private functions
+//
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
     let mut tempfile = NamedTempFile::new()?;
