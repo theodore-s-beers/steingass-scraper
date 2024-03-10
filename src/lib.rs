@@ -280,30 +280,28 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 fn clean_hw_full(input: &str) -> String {
     let precleaned = clean_simple(input);
 
-    let swap_alif_fatha = precleaned.replace("\u{0627}\u{064E}", "\u{0622}");
-    let swap_ch = swap_alif_fatha.replace('\u{FB7A}', "\u{0686}");
+    // Complex removals; maintain order!
+    let no_space_kasra = precleaned.replace("\u{0020}\u{0650}", "");
+    let no_kasra = no_space_kasra.replace('\u{0650}', "");
+
+    // Simple swaps
+    let swap_ch = no_kasra.replace('\u{FB7A}', "\u{0686}");
     let swap_double_ayn = swap_ch.replace('\u{0022}', "\u{02BB}\u{02BB}");
     let swap_a_hat = swap_double_ayn.replace('\u{00E2}', "\u{0101}");
     let swap_quad_p = swap_a_hat.replace('\u{0680}', "\u{067E}");
     let swap_dot_s = swap_quad_p.replace('\u{1E61}', "\u{1E63}");
     let swap_dot_k = swap_dot_s.replace('\u{1E33}', "\u{006B}");
+    let swap_left_arrow = swap_dot_k.replace('\u{2039}', "\u{012B}");
+    let swap_a_grave = swap_left_arrow.replace('\u{00E0}', "\u{0061}");
 
-    // Complex removals; maintain order!
-    let no_space_kasra = swap_dot_k.replace("\u{0020}\u{0650}", "");
-    let no_kasra = no_space_kasra.replace('\u{0650}', "");
+    // Complex swaps
+    let swap_alif_fatha = swap_a_grave.replace("\u{0627}\u{064E}", "\u{0622}");
+    let swap_e_breve = swap_alif_fatha.replace("\u{0065}\u{0306}", "\u{0115}");
 
     // Word-specific fixes
-    let fix_maris = no_kasra.replace("\u{06CC}\u{064E}", "\u{06CC}");
-
-    let swap_left_arrow = fix_maris.replace('\u{2039}', "\u{012B}");
-
-    let fix_muwajahatan = swap_left_arrow.replace("\u{0020}\u{064C}", "\u{064B}");
-
-    let swap_a_grave = fix_muwajahatan.replace('\u{00E0}', "\u{0061}");
-
-    let swap_e_breve = swap_a_grave.replace("\u{0065}\u{0306}", "\u{0115}");
-
-    let fix_yasiran = swap_e_breve.replace("\u{0020}\u{064F}", "\u{064B}");
+    let fix_maris = swap_e_breve.replace("\u{06CC}\u{064E}", "\u{06CC}");
+    let fix_muwajahatan = fix_maris.replace("\u{0020}\u{064C}", "\u{064B}");
+    let fix_yasiran = fix_muwajahatan.replace("\u{0020}\u{064F}", "\u{064B}");
 
     fix_yasiran
 }
