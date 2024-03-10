@@ -441,6 +441,18 @@ mod tests {
     ];
 
     #[test]
+    fn char_lists_sorted() {
+        let mut arabic = ARABIC_ALLOWED;
+        let mut other = OTHER_ALLOWED;
+
+        arabic.sort_unstable();
+        other.sort_unstable();
+
+        assert_eq!(arabic, ARABIC_ALLOWED);
+        assert_eq!(other, OTHER_ALLOWED);
+    }
+
+    #[test]
     fn confirm_html() {
         let conn_dev = Connection::open("entries.sqlite").unwrap();
         let conn_backup = Connection::open("html_backup.sqlite").unwrap();
@@ -618,7 +630,7 @@ mod tests {
             }
 
             // if persian_regen != headword_persian {
-            //     println!("Fixing id {}", id);
+            //     println!("Fixing ID {}", id);
 
             //     conn.execute(
             //         "UPDATE entries SET headword_persian = ?1 WHERE id = ?2",
@@ -629,7 +641,7 @@ mod tests {
 
             assert_eq!(
                 persian_regen, headword_persian,
-                "Mismatch (id {}): {} != {}",
+                "Mismatch (ID {}): {} != {}",
                 id, persian_regen, headword_persian
             );
         }
