@@ -536,7 +536,7 @@ mod tests {
     }
 
     #[test]
-    fn hw_full_values() {
+    fn hw_full_values_fast() {
         let conn = Connection::open("entries.sqlite").unwrap();
         let mut stmt = conn
             .prepare("SELECT id, headword_full FROM entries")
@@ -567,6 +567,34 @@ mod tests {
             // }
 
             assert_eq!(cleaned_further, headword_full, "Mismatch in ID {}", id);
+        }
+    }
+
+    // This takes about 35 minutes to run; it has run successfully
+    // #[test]
+    fn _hw_full_values_slow() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, raw_html, headword_full FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let raw_html: String = row.get(1).unwrap();
+                let headword_full: String = row.get(2).unwrap();
+                Ok((id, raw_html, headword_full))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, raw_html, headword_full) = entry.unwrap();
+            println!("Checking ID {}...", id);
+
+            let parsed = Html::parse_fragment(&raw_html);
+            let hw_full_regen = select_full_headword(&parsed).unwrap();
+
+            assert_eq!(hw_full_regen, headword_full);
         }
     }
 
