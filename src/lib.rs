@@ -229,8 +229,9 @@ pub fn get_hw_lat(parsed: &Html) -> Result<String, anyhow::Error> {
         Some(latin) => pandoc(&latin.html())?,
         None => "N/A".to_owned(),
     };
+    let cleaned = clean_hw_lat(&latin_text);
 
-    Ok(latin_text)
+    Ok(cleaned)
 }
 
 pub fn except_headword(input: &str) -> Result<String, anyhow::Error> {
@@ -304,6 +305,21 @@ fn clean_hw_full(input: &str) -> String {
     let fix_yasiran = fix_muwajahatan.replace("\u{0020}\u{064F}", "\u{064B}");
 
     fix_yasiran
+}
+
+#[allow(clippy::let_and_return)]
+fn clean_hw_lat(input: &str) -> String {
+    let trimmed = input.trim();
+
+    let swap_double_ayn = trimmed.replace('\u{0022}', "\u{02BB}\u{02BB}");
+    let swap_a_hat = swap_double_ayn.replace('\u{00E2}', "\u{0101}");
+    let swap_dot_s = swap_a_hat.replace('\u{1E61}', "\u{1E63}");
+    let swap_dot_k = swap_dot_s.replace('\u{1E33}', "\u{006B}");
+    let swap_left_arrow = swap_dot_k.replace('\u{2039}', "\u{012B}");
+    let swap_a_grave = swap_left_arrow.replace('\u{00E0}', "\u{0061}");
+    let swap_e_breve = swap_a_grave.replace("\u{0065}\u{0306}", "\u{0115}");
+
+    swap_e_breve
 }
 
 #[allow(clippy::let_and_return)]
@@ -427,15 +443,15 @@ mod tests {
         0x670, 0x67E, 0x686, 0x698, 0x6A9, 0x6AF, 0x6C0, 0x6CC,
     ];
 
-    const OTHER_ALLOWED: [u32; 79] = [
-        0x0020, 0x0026, 0x0027, 0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x0030,
-        0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x003B, 0x003D,
-        0x003F, 0x0041, 0x0050, 0x0051, 0x0053, 0x005A, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
-        0x0066, 0x0067, 0x0068, 0x0069, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070,
-        0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0079, 0x007A, 0x00E1, 0x00EE,
-        0x00FC, 0x0101, 0x0113, 0x0115, 0x012B, 0x014D, 0x016B, 0x02BB, 0x02BC, 0x02CC, 0x0320,
-        0x0324, 0x1E25, 0x1E35, 0x1E43, 0x1E47, 0x1E5B, 0x1E63, 0x1E6D, 0x1E89, 0x1E93, 0x1E95,
-        0x1E96, 0x2014,
+    const OTHER_ALLOWED: [u32; 82] = [
+        0x0020, 0x0026, 0x0027, 0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F,
+        0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x003B,
+        0x003D, 0x003F, 0x0041, 0x004E, 0x0050, 0x0051, 0x0053, 0x005A, 0x0061, 0x0062, 0x0063,
+        0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E,
+        0x006F, 0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0079, 0x007A,
+        0x00E1, 0x00EE, 0x00FC, 0x0101, 0x0113, 0x0115, 0x012B, 0x014D, 0x016B, 0x02BB, 0x02BC,
+        0x02CC, 0x0320, 0x0324, 0x1E25, 0x1E35, 0x1E43, 0x1E47, 0x1E5B, 0x1E63, 0x1E6D, 0x1E89,
+        0x1E93, 0x1E95, 0x1E96, 0x2014, 0x2018,
     ];
 
     #[test]
@@ -589,12 +605,74 @@ mod tests {
 
         for entry in entry_iter {
             let (id, raw_html, headword_full) = entry.unwrap();
-            println!("Checking ID {}...", id);
+            println!("Checking ID {}", id);
 
             let parsed = Html::parse_fragment(&raw_html);
             let hw_full_regen = select_full_headword(&parsed).unwrap();
 
             assert_eq!(hw_full_regen, headword_full);
+        }
+    }
+
+    #[test]
+    fn hw_lat_chars() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, headword_latin FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let headword_latin: String = row.get(1).unwrap();
+                Ok((id, headword_latin))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, headword_latin) = entry.unwrap();
+
+            for c in headword_latin.chars() {
+                assert!(
+                    OTHER_ALLOWED.contains(&(c as u32)),
+                    "Non-standard char in Latin headword (ID {}): U+{:04X}",
+                    id,
+                    c as u32
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn hw_lat_values_fast() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, headword_latin FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let headword_latin: String = row.get(1).unwrap();
+                Ok((id, headword_latin))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, headword_latin) = entry.unwrap();
+            let cleaned = clean_hw_lat(&headword_latin);
+
+            // if cleaned != headword_latin {
+            //     println!("Fixing ID {}", id);
+
+            //     conn.execute(
+            //         "UPDATE entries SET headword_latin = ?1 WHERE id = ?2",
+            //         (cleaned, id),
+            //     )
+            //     .unwrap();
+            // }
+
+            assert_eq!(cleaned, headword_latin, "Mismatch in ID {}", id);
         }
     }
 
