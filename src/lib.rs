@@ -244,8 +244,9 @@ pub fn except_headword(input: &str) -> Result<String, anyhow::Error> {
     let without_lang = re_lang.replace_all(&without_hw, "");
 
     let processed = pandoc(&without_lang)?;
+    let cleaned = clean_defs(&processed);
 
-    Ok(processed)
+    Ok(cleaned)
 }
 
 pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> {
@@ -276,6 +277,30 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 //
 // Private functions
 //
+
+#[allow(clippy::let_and_return)]
+fn clean_defs(input: &str) -> String {
+    let precleaned = clean_simple(input);
+
+    let swap_ae = precleaned.replace('\u{04D4}', "\u{00C6}");
+    let swap_quad_p = swap_ae.replace('\u{0680}', "\u{067E}");
+    let swap_u_hat = swap_quad_p.replace('\u{00FB}', "\u{016B}");
+    let swap_madda = swap_u_hat.replace('\u{FE81}', "\u{0622}");
+    let swap_dot = swap_madda.replace('\u{00B7}', "\u{02BB}");
+    let swap_lira = swap_dot.replace('\u{20A4}', "\u{00A3}");
+    let swap_z_dot = swap_lira.replace('\u{017C}', "\u{1E93}");
+
+    // Maintain order!
+    let swap_e_breve = swap_z_dot.replace("\u{0065}\u{0306}", "\u{0115}");
+    let swap_breve = swap_e_breve.replace('\u{0306}', "\u{02D8}");
+
+    let fix_lone_madda = swap_breve.replace(
+        "\u{002F}\u{061F}\u{002F}",
+        "\u{0640}\u{0640}\u{0653}\u{0640}",
+    );
+
+    fix_lone_madda
+}
 
 #[allow(clippy::let_and_return)]
 fn clean_hw_full(input: &str) -> String {
@@ -455,22 +480,22 @@ mod tests {
     ];
 
     // Could split this into categories for Greek, Hebrew, etc.
-    const DEFS_ONLY: [u32; 157] = [
+    const DEFS_ONLY: [u32; 161] = [
         0x0021, 0x0022, 0x003A, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049,
         0x004A, 0x004B, 0x004C, 0x004D, 0x004F, 0x0052, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
-        0x0059, 0x005B, 0x005C, 0x005D, 0x0078, 0x007C, 0x00AF, 0x00B9, 0x00BC, 0x00BD, 0x00C9,
-        0x00E0, 0x00E2, 0x00E6, 0x00E7, 0x00E8, 0x00E9, 0x00EA, 0x00ED, 0x00F1, 0x00F2, 0x00F4,
-        0x00F6, 0x0100, 0x012A, 0x0153, 0x015B, 0x016A, 0x0392, 0x039C, 0x039D, 0x03A0, 0x03A3,
-        0x03A8, 0x03AC, 0x03AD, 0x03AE, 0x03AF, 0x03B1, 0x03B2, 0x03B3, 0x03B4, 0x03B5, 0x03B6,
-        0x03B7, 0x03B8, 0x03B9, 0x03BA, 0x03BB, 0x03BC, 0x03BD, 0x03BE, 0x03BF, 0x03C0, 0x03C1,
-        0x03C2, 0x03C3, 0x03C4, 0x03C5, 0x03C6, 0x03C7, 0x03C8, 0x03C9, 0x03CC, 0x03CD, 0x03CE,
-        0x03DD, 0x05B0, 0x05B4, 0x05B7, 0x05B8, 0x05BC, 0x05D0, 0x05D4, 0x05D9, 0x05DA, 0x05DC,
-        0x05DE, 0x05DF, 0x05E2, 0x05E7, 0x05E8, 0x05EA, 0x0640, 0x064C, 0x064E, 0x064F, 0x0650,
-        0x0652, 0x1E0D, 0x1E34, 0x1E45, 0x1E62, 0x1E94, 0x1F00, 0x1F04, 0x1F05, 0x1F08, 0x1F10,
-        0x1F11, 0x1F14, 0x1F21, 0x1F30, 0x1F31, 0x1F34, 0x1F36, 0x1F40, 0x1F44, 0x1F50, 0x1F51,
-        0x1F55, 0x1F60, 0x1F61, 0x1F64, 0x1F70, 0x1F72, 0x1F74, 0x1F76, 0x1F78, 0x1F7A, 0x1F7C,
-        0x1FC6, 0x1FD6, 0x1FE4, 0x1FE5, 0x1FE6, 0x2080, 0x2082, 0x2085, 0x2089, 0x2251, 0xFB2A,
-        0xFB35, 0xFB44, 0xFB4B,
+        0x0059, 0x005B, 0x005C, 0x005D, 0x0078, 0x007C, 0x00A3, 0x00AF, 0x00B9, 0x00BC, 0x00BD,
+        0x00C6, 0x00C9, 0x00E0, 0x00E2, 0x00E6, 0x00E7, 0x00E8, 0x00E9, 0x00EA, 0x00ED, 0x00F1,
+        0x00F2, 0x00F4, 0x00F6, 0x0100, 0x012A, 0x0153, 0x015B, 0x016A, 0x02D8, 0x0392, 0x039C,
+        0x039D, 0x03A0, 0x03A3, 0x03A8, 0x03AC, 0x03AD, 0x03AE, 0x03AF, 0x03B1, 0x03B2, 0x03B3,
+        0x03B4, 0x03B5, 0x03B6, 0x03B7, 0x03B8, 0x03B9, 0x03BA, 0x03BB, 0x03BC, 0x03BD, 0x03BE,
+        0x03BF, 0x03C0, 0x03C1, 0x03C2, 0x03C3, 0x03C4, 0x03C5, 0x03C6, 0x03C7, 0x03C8, 0x03C9,
+        0x03CC, 0x03CD, 0x03CE, 0x03DD, 0x05B0, 0x05B4, 0x05B7, 0x05B8, 0x05BC, 0x05D0, 0x05D4,
+        0x05D9, 0x05DA, 0x05DC, 0x05DE, 0x05DF, 0x05E2, 0x05E7, 0x05E8, 0x05EA, 0x0640, 0x064C,
+        0x064E, 0x064F, 0x0650, 0x0652, 0x0653, 0x1E0D, 0x1E34, 0x1E45, 0x1E62, 0x1E94, 0x1F00,
+        0x1F04, 0x1F05, 0x1F08, 0x1F10, 0x1F11, 0x1F14, 0x1F21, 0x1F30, 0x1F31, 0x1F34, 0x1F36,
+        0x1F40, 0x1F44, 0x1F50, 0x1F51, 0x1F55, 0x1F60, 0x1F61, 0x1F64, 0x1F70, 0x1F72, 0x1F74,
+        0x1F76, 0x1F78, 0x1F7A, 0x1F7C, 0x1FC6, 0x1FD6, 0x1FE4, 0x1FE5, 0x1FE6, 0x2080, 0x2082,
+        0x2085, 0x2089, 0x2251, 0xFB2A, 0xFB35, 0xFB44, 0xFB4B,
     ];
 
     #[test]
@@ -548,80 +573,12 @@ mod tests {
             let (id, definitions) = entry.unwrap();
 
             for c in definitions.chars() {
-                if c as u32 == 0x200D {
-                    continue; // Zero-width joiner; remove later
-                }
-
-                if c as u32 == 0xFBA9 {
-                    continue; // Heh goal medial; fix later
-                }
-
-                if c as u32 == 0xFB94 {
-                    continue; // Gaf initial; fix later
-                }
-
-                if c as u32 == 0x04D4 {
-                    continue; // Cyrillic AE; fix later (replace with U+00C6)
-                }
-
-                if c as u32 == 0x0680 {
-                    continue; // Peh with four dots; fix later
-                }
-
-                if c as u32 == 0x0306 {
-                    continue; // Combining breve (probably with e again?); fix later
-                }
-
-                if c as u32 == 0xFB58 {
-                    continue; // Peh initial; fix later
-                }
-
-                if c as u32 == 0xFB59 {
-                    continue; // Peh medial; fix later
-                }
-
-                if c as u32 == 0x00FB {
-                    continue; // û; occurs only once; can be replaced with ū
-                }
-
-                if c as u32 == 0xFB7D {
-                    continue; // Cheh medial; fix later
-                }
-
-                if c as u32 == 0xFB8A {
-                    continue; // Zheh isolated; fix later
-                }
-
-                if c as u32 == 0xFB8B {
-                    continue; // Zheh final; fix later
-                }
-
-                if c as u32 == 0xFE81 {
-                    continue; // Alif madda isolated; fix later
-                }
-
-                if c as u32 == 0x00B7 {
-                    continue; // Middle dot; typo for ‘ayn; fix later
-                }
-
                 if c as u32 == 0x0331 {
                     continue; // Comb. macron below; occurs twice; U+0320 used elsewhere; pick one?
                 }
 
-                if c as u32 == 0x061F {
-                    continue; // Arabic question mark; used once; should be madd; fix later
-                }
-
-                if c as u32 == 0x017C {
-                    continue; // ż; used once; should be ẓ; fix later
-                }
-
                 if c as u32 == 0x00C1 {
                     continue; // Á; used once; should be A; fix later
-                }
-
-                if c as u32 == 0x20A4 {
-                    continue; // Lira sign; used once; should be U+00A3; fix later
                 }
 
                 // U+005C is used to escape other characters; can reflect problems
@@ -637,6 +594,38 @@ mod tests {
                     c as u32
                 );
             }
+        }
+    }
+
+    #[test]
+    fn def_values_fast() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn.prepare("SELECT id, definitions FROM entries").unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let definitions: String = row.get(1).unwrap();
+                Ok((id, definitions))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, definitions) = entry.unwrap();
+
+            let cleaned = clean_defs(&definitions);
+
+            // if cleaned != definitions {
+            //     println!("Fixing ID {}", id);
+
+            //     conn.execute(
+            //         "UPDATE entries SET definitions = ?1 WHERE id = ?2",
+            //         (cleaned, id),
+            //     )
+            //     .unwrap();
+            // }
+
+            assert_eq!(cleaned, definitions, "Mismatch in ID {}", id);
         }
     }
 
