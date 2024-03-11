@@ -282,6 +282,7 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 fn clean_defs(input: &str) -> String {
     let precleaned = clean_simple(input);
 
+    // Simple swaps
     let swap_ae = precleaned.replace('\u{04D4}', "\u{00C6}");
     let swap_quad_p = swap_ae.replace('\u{0680}', "\u{067E}");
     let swap_u_hat = swap_quad_p.replace('\u{00FB}', "\u{016B}");
@@ -289,11 +290,13 @@ fn clean_defs(input: &str) -> String {
     let swap_dot = swap_madda.replace('\u{00B7}', "\u{02BB}");
     let swap_lira = swap_dot.replace('\u{20A4}', "\u{00A3}");
     let swap_z_dot = swap_lira.replace('\u{017C}', "\u{1E93}");
+    let swap_a_acute = swap_z_dot.replace('\u{00C1}', "\u{0041}");
 
-    // Maintain order!
-    let swap_e_breve = swap_z_dot.replace("\u{0065}\u{0306}", "\u{0115}");
+    // Complex swaps; maintain order!
+    let swap_e_breve = swap_a_acute.replace("\u{0065}\u{0306}", "\u{0115}");
     let swap_breve = swap_e_breve.replace('\u{0306}', "\u{02D8}");
 
+    // Single-instance fix
     let fix_lone_madda = swap_breve.replace(
         "\u{002F}\u{061F}\u{002F}",
         "\u{0640}\u{0640}\u{0653}\u{0640}",
@@ -334,14 +337,17 @@ fn clean_hw_full(input: &str) -> String {
 
 #[allow(clippy::let_and_return)]
 fn clean_hw_lat(input: &str) -> String {
-    let trimmed = input.trim();
+    let precleaned = clean_simple(input);
 
-    let swap_double_ayn = trimmed.replace('\u{0022}', "\u{02BB}\u{02BB}");
+    // Simple swaps
+    let swap_double_ayn = precleaned.replace('\u{0022}', "\u{02BB}\u{02BB}");
     let swap_a_hat = swap_double_ayn.replace('\u{00E2}', "\u{0101}");
     let swap_dot_s = swap_a_hat.replace('\u{1E61}', "\u{1E63}");
     let swap_dot_k = swap_dot_s.replace('\u{1E33}', "\u{006B}");
     let swap_left_arrow = swap_dot_k.replace('\u{2039}', "\u{012B}");
     let swap_a_grave = swap_left_arrow.replace('\u{00E0}', "\u{0061}");
+
+    // Complex swap
     let swap_e_breve = swap_a_grave.replace("\u{0065}\u{0306}", "\u{0115}");
 
     swap_e_breve
@@ -357,8 +363,6 @@ fn clean_hw_per(input: &str) -> String {
 
     // Complex swaps
     let swap_alif_fatha = no_kasra.replace("\u{0627}\u{064E}", "\u{0622}");
-
-    // Fix space before kasratayn
     let fix_kasratayn = swap_alif_fatha.replace("\u{0020}\u{064D}", "\u{064D}");
 
     // Word-specific fixes
@@ -391,8 +395,9 @@ fn clean_simple(input: &str) -> String {
     let swap_ngoeh = swap_hamza_y.replace('\u{06B1}', "\u{06AF}");
     let swap_h_do = swap_ngoeh.replace('\u{06BE}', "\u{0647}");
     let swap_dotless_b = swap_h_do.replace('\u{066E}', "\u{0628}");
+    let swap_macron_below = swap_dotless_b.replace('\u{0320}', "\u{0331}");
 
-    swap_dotless_b
+    swap_macron_below
 }
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
@@ -475,7 +480,7 @@ mod tests {
         0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E,
         0x006F, 0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0079, 0x007A,
         0x00E1, 0x00EE, 0x00FC, 0x0101, 0x0113, 0x0115, 0x012B, 0x014D, 0x016B, 0x02BB, 0x02BC,
-        0x02CC, 0x0320, 0x0324, 0x1E25, 0x1E35, 0x1E43, 0x1E47, 0x1E5B, 0x1E63, 0x1E6D, 0x1E89,
+        0x02CC, 0x0324, 0x0331, 0x1E25, 0x1E35, 0x1E43, 0x1E47, 0x1E5B, 0x1E63, 0x1E6D, 0x1E89,
         0x1E93, 0x1E95, 0x1E96, 0x2014, 0x2018,
     ];
 
@@ -573,14 +578,6 @@ mod tests {
             let (id, definitions) = entry.unwrap();
 
             for c in definitions.chars() {
-                if c as u32 == 0x0331 {
-                    continue; // Comb. macron below; occurs twice; U+0320 used elsewhere; pick one?
-                }
-
-                if c as u32 == 0x00C1 {
-                    continue; // Á; used once; should be A; fix later
-                }
-
                 // U+005C is used to escape other characters; can reflect problems
                 // U+00ED is wrong, but not in a consistent way; perhaps fix later
 
@@ -647,8 +644,8 @@ mod tests {
         for entry in entry_iter {
             let (id, headword_full) = entry.unwrap();
 
-            // The entry on ātish-ālūd is messed up; make sure to fix later
-            // The entry on najaz also seems off
+            // Entry on ātish-ālūd is messed up; make sure to fix later
+            // Entry on najaz also seems off
             // Will allow semicolon for now, but it should probably be removed
             // Will allow ō for now, but it should probably be replaced with o
             // Use of U+02CC is odd, but will allow it for now
@@ -656,7 +653,7 @@ mod tests {
             // Need to replace ṭ eventually, but it isn't wrong in a consistent way
             // Same problem with î: wrong in two different ways
             // Em dash should be removed eventually, but will allow it for now
-            // The use of ĕ is strange but ok; it's really in the printed Steingass
+            // Use of ĕ is strange but ok; it's really in the printed Steingass
 
             for c in headword_full.chars() {
                 assert!(
@@ -689,8 +686,7 @@ mod tests {
         for entry in entry_iter {
             let (id, headword_full) = entry.unwrap();
 
-            let cleaned_simple = clean_simple(&headword_full);
-            let cleaned_further = clean_hw_full(&cleaned_simple);
+            let cleaned_further = clean_hw_full(&headword_full);
 
             // if cleaned_further != headword_full {
             //     println!("Fixing ID {}", id);
