@@ -7,10 +7,14 @@ use std::time::Duration;
 use rusqlite::Connection;
 use scraper::Html;
 
+use steingass_scraper::defs::except_headword;
+use steingass_scraper::hw_full::select_full_headword;
+use steingass_scraper::hw_lat::get_hw_lat;
+use steingass_scraper::hw_per::get_hw_per;
+use steingass_scraper::langs::get_lang;
 use steingass_scraper::{
-    count_page_entries, ensure_table, except_headword, fetch_html, get_hw_lat, get_hw_per,
-    get_lang, insert_row, select_full_headword, select_results, Entry, BAD_PAGES, MAX_PAGE,
-    MIN_PAGE,
+    count_page_entries, ensure_table, fetch_html, insert_row, select_results, Entry, BAD_PAGES,
+    MAX_PAGE, MIN_PAGE,
 };
 
 fn main() -> Result<(), anyhow::Error> {
