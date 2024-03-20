@@ -236,7 +236,7 @@ mod tests {
     #[test]
     fn page_count() {
         let total_pages = MAX_PAGE - MIN_PAGE + 1;
-        let good_pages = total_pages - BAD_PAGES.len() as u16;
+        let good_pages = total_pages - u16::try_from(BAD_PAGES.len()).unwrap();
 
         let conn = Connection::open("entries.sqlite").unwrap();
         let mut stmt = conn
