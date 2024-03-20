@@ -12,22 +12,23 @@ pub fn get_hw_per(parsed: &Html) -> String {
 
 #[allow(clippy::let_and_return)]
 fn clean_hw_per(input: &str) -> String {
-    let precleaned = clean_simple(input);
+    let mut cleaned = clean_simple(input);
 
-    // Complex removals; maintain order!
-    let no_space_kasra = precleaned.replace("\u{0020}\u{0650}", "");
-    let no_kasra = no_space_kasra.replace('\u{0650}', "");
+    let swaps: [(&str, &str); 7] = [
+        ("\u{0020}\u{0650}", ""), // Remove space kasra; maintain order with following!
+        ("\u{0650}", ""),         // Remove any kasra; maintain order with preceding!
+        ("\u{0627}\u{064E}", "\u{0622}"), // Swap alif fatha
+        ("\u{0020}\u{064D}", "\u{064D}"), // Fix kasratayn
+        ("\u{0020}\u{064C}", "\u{064B}"), // Fix muwajahatan
+        ("\u{06CC}\u{064E}", "\u{06CC}"), // Fix maris
+        ("\u{0020}\u{064F}", "\u{064B}"), // Fix yasiran
+    ];
 
-    // Complex swaps
-    let swap_alif_fatha = no_kasra.replace("\u{0627}\u{064E}", "\u{0622}");
-    let fix_kasratayn = swap_alif_fatha.replace("\u{0020}\u{064D}", "\u{064D}");
+    for (from, to) in swaps {
+        cleaned = cleaned.replace(from, to);
+    }
 
-    // Word-specific fixes
-    let fix_muwajahatan = fix_kasratayn.replace("\u{0020}\u{064C}", "\u{064B}");
-    let fix_maris = fix_muwajahatan.replace("\u{06CC}\u{064E}", "\u{06CC}");
-    let fix_yasiran = fix_maris.replace("\u{0020}\u{064F}", "\u{064B}");
-
-    fix_yasiran
+    cleaned
 }
 
 #[cfg(test)]

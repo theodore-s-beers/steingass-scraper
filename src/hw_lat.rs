@@ -14,20 +14,24 @@ pub fn get_hw_lat(parsed: &Html) -> Result<String, anyhow::Error> {
 
 #[allow(clippy::let_and_return)]
 fn clean_hw_lat(input: &str) -> String {
-    let precleaned = clean_simple(input);
+    let mut cleaned = clean_simple(input);
 
-    // Simple swaps
-    let swap_double_ayn = precleaned.replace('\u{0022}', "\u{02BB}\u{02BB}");
-    let swap_a_hat = swap_double_ayn.replace('\u{00E2}', "\u{0101}");
-    let swap_dot_s = swap_a_hat.replace('\u{1E61}', "\u{1E63}");
-    let swap_dot_k = swap_dot_s.replace('\u{1E33}', "\u{006B}");
-    let swap_left_arrow = swap_dot_k.replace('\u{2039}', "\u{012B}");
-    let swap_a_grave = swap_left_arrow.replace('\u{00E0}', "\u{0061}");
+    let swaps: [(char, &str); 6] = [
+        ('\u{0022}', "\u{02BB}\u{02BB}"), // Double ayn
+        ('\u{00E2}', "\u{0101}"),         // A hat
+        ('\u{1E61}', "\u{1E63}"),         // Dot s
+        ('\u{1E33}', "\u{006B}"),         // Dot k
+        ('\u{2039}', "\u{012B}"),         // Left arrow
+        ('\u{00E0}', "\u{0061}"),         // A grave
+    ];
 
-    // Complex swap
-    let swap_e_breve = swap_a_grave.replace("\u{0065}\u{0306}", "\u{0115}");
+    for (from, to) in swaps {
+        cleaned = cleaned.replace(from, to);
+    }
 
-    swap_e_breve
+    cleaned = cleaned.replace("\u{0065}\u{0306}", "\u{0115}"); // E breve
+
+    cleaned
 }
 
 #[cfg(test)]
