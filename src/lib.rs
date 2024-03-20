@@ -122,29 +122,32 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 
 #[allow(clippy::let_and_return, clippy::similar_names)]
 fn clean_simple(input: &str) -> String {
-    let trimmed = input.trim();
+    let mut cleaned = input.trim().to_owned();
 
-    // Simple removals
-    let no_zwj = trimmed.replace('\u{200D}', "");
-    let no_rlm = no_zwj.replace('\u{200F}', "");
+    let swaps: [(char, &str); 16] = [
+        ('\u{200D}', ""),         // Remove ZWJ
+        ('\u{200F}', ""),         // Remove RLM
+        ('\u{FBA9}', "\u{0647}"), // H medial
+        ('\u{FB7D}', "\u{0686}"), // Ch
+        ('\u{FB58}', "\u{067E}"), // P initial
+        ('\u{FB59}', "\u{067E}"), // P medial
+        ('\u{FB8A}', "\u{0698}"), // Zh
+        ('\u{FB94}', "\u{06AF}"), // G
+        ('\u{FB8B}', "\u{0698}"), // Zh final
+        ('\u{FEEB}', "\u{0647}"), // H initial
+        ('\u{FE81}', "\u{0622}"), // Madda
+        ('\u{FE8A}', "\u{0626}"), // Hamza y
+        ('\u{06B1}', "\u{06AF}"), // Ngoeh
+        ('\u{06BE}', "\u{0647}"), // H do
+        ('\u{066E}', "\u{0628}"), // Dotless b
+        ('\u{0320}', "\u{0331}"), // Macron below
+    ];
 
-    // Simple swaps
-    let swap_h_med = no_rlm.replace('\u{FBA9}', "\u{0647}");
-    let swap_ch = swap_h_med.replace('\u{FB7D}', "\u{0686}");
-    let swap_p_init = swap_ch.replace('\u{FB58}', "\u{067E}");
-    let swap_p_med = swap_p_init.replace('\u{FB59}', "\u{067E}");
-    let swap_zh = swap_p_med.replace('\u{FB8A}', "\u{0698}");
-    let swap_g = swap_zh.replace('\u{FB94}', "\u{06AF}");
-    let swap_zh_fin = swap_g.replace('\u{FB8B}', "\u{0698}");
-    let swap_h_init = swap_zh_fin.replace('\u{FEEB}', "\u{0647}");
-    let swap_madda = swap_h_init.replace('\u{FE81}', "\u{0622}");
-    let swap_hamza_y = swap_madda.replace('\u{FE8A}', "\u{0626}");
-    let swap_ngoeh = swap_hamza_y.replace('\u{06B1}', "\u{06AF}");
-    let swap_h_do = swap_ngoeh.replace('\u{06BE}', "\u{0647}");
-    let swap_dotless_b = swap_h_do.replace('\u{066E}', "\u{0628}");
-    let swap_macron_below = swap_dotless_b.replace('\u{0320}', "\u{0331}");
+    for swap in swaps {
+        cleaned = cleaned.replace(swap.0, swap.1);
+    }
 
-    swap_macron_below
+    cleaned
 }
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
