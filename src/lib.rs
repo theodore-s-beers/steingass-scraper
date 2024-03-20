@@ -143,8 +143,8 @@ fn clean_simple(input: &str) -> String {
         ('\u{0320}', "\u{0331}"), // Macron below
     ];
 
-    for swap in swaps {
-        cleaned = cleaned.replace(swap.0, swap.1);
+    for (from, to) in swaps {
+        cleaned = cleaned.replace(from, to);
     }
 
     cleaned

@@ -12,32 +12,45 @@ pub fn select_full_headword(parsed: &Html) -> Result<String, anyhow::Error> {
 
 #[allow(clippy::let_and_return)]
 fn clean_hw_full(input: &str) -> String {
-    let precleaned = clean_simple(input);
+    let mut cleaned = clean_simple(input);
 
-    // Complex removals; maintain order!
-    let no_space_kasra = precleaned.replace("\u{0020}\u{0650}", "");
-    let no_kasra = no_space_kasra.replace('\u{0650}', "");
+    let swaps_ordered: [(&str, &str); 2] = [
+        ("\u{0020}\u{0650}", ""), // Space kasra
+        ("\u{0650}", ""),         // Kasra
+    ];
 
-    // Simple swaps
-    let swap_ch = no_kasra.replace('\u{FB7A}', "\u{0686}");
-    let swap_double_ayn = swap_ch.replace('\u{0022}', "\u{02BB}\u{02BB}");
-    let swap_a_hat = swap_double_ayn.replace('\u{00E2}', "\u{0101}");
-    let swap_quad_p = swap_a_hat.replace('\u{0680}', "\u{067E}");
-    let swap_dot_s = swap_quad_p.replace('\u{1E61}', "\u{1E63}");
-    let swap_dot_k = swap_dot_s.replace('\u{1E33}', "\u{006B}");
-    let swap_left_arrow = swap_dot_k.replace('\u{2039}', "\u{012B}");
-    let swap_a_grave = swap_left_arrow.replace('\u{00E0}', "\u{0061}");
+    for (from, to) in swaps_ordered {
+        cleaned = cleaned.replace(from, to);
+    }
 
-    // Complex swaps
-    let swap_alif_fatha = swap_a_grave.replace("\u{0627}\u{064E}", "\u{0622}");
-    let swap_e_breve = swap_alif_fatha.replace("\u{0065}\u{0306}", "\u{0115}");
+    let swaps_simple: [(char, &str); 8] = [
+        ('\u{FB7A}', "\u{0686}"),         // Ch
+        ('\u{0022}', "\u{02BB}\u{02BB}"), // Double ayn
+        ('\u{00E2}', "\u{0101}"),         // A hat
+        ('\u{0680}', "\u{067E}"),         // Quad p
+        ('\u{1E61}', "\u{1E63}"),         // Dot s
+        ('\u{1E33}', "\u{006B}"),         // Dot k
+        ('\u{2039}', "\u{012B}"),         // Left arrow
+        ('\u{00E0}', "\u{0061}"),         // A grave
+    ];
 
-    // Word-specific fixes
-    let fix_maris = swap_e_breve.replace("\u{06CC}\u{064E}", "\u{06CC}");
-    let fix_muwajahatan = fix_maris.replace("\u{0020}\u{064C}", "\u{064B}");
-    let fix_yasiran = fix_muwajahatan.replace("\u{0020}\u{064F}", "\u{064B}");
+    for (from, to) in swaps_simple {
+        cleaned = cleaned.replace(from, to);
+    }
 
-    fix_yasiran
+    let swaps_complex: [(&str, &str); 5] = [
+        ("\u{0627}\u{064E}", "\u{0622}"), // Alif fatha
+        ("\u{0065}\u{0306}", "\u{0115}"), // E breve
+        ("\u{06CC}\u{064E}", "\u{06CC}"), // Fix maris
+        ("\u{0020}\u{064C}", "\u{064B}"), // Fix muwajahatan
+        ("\u{0020}\u{064F}", "\u{064B}"), // Fix yasiran
+    ];
+
+    for (from, to) in swaps_complex {
+        cleaned = cleaned.replace(from, to);
+    }
+
+    cleaned
 }
 
 #[cfg(test)]
