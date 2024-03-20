@@ -18,29 +18,36 @@ pub fn except_headword(input: &str) -> Result<String, anyhow::Error> {
 
 #[allow(clippy::let_and_return)]
 fn clean_defs(input: &str) -> String {
-    let precleaned = clean_simple(input);
+    let mut cleaned = clean_simple(input);
 
-    // Simple swaps
-    let swap_ae = precleaned.replace('\u{04D4}', "\u{00C6}");
-    let swap_quad_p = swap_ae.replace('\u{0680}', "\u{067E}");
-    let swap_u_hat = swap_quad_p.replace('\u{00FB}', "\u{016B}");
-    let swap_madda = swap_u_hat.replace('\u{FE81}', "\u{0622}");
-    let swap_dot = swap_madda.replace('\u{00B7}', "\u{02BB}");
-    let swap_lira = swap_dot.replace('\u{20A4}', "\u{00A3}");
-    let swap_z_dot = swap_lira.replace('\u{017C}', "\u{1E93}");
-    let swap_a_acute = swap_z_dot.replace('\u{00C1}', "\u{0041}");
+    let swaps_simple: [(char, &str); 7] = [
+        ('\u{04D4}', "\u{00C6}"), // Ae
+        ('\u{00FB}', "\u{016B}"), // U hat
+        ('\u{FE81}', "\u{0622}"), // Madda
+        ('\u{00B7}', "\u{02BB}"), // Dot
+        ('\u{20A4}', "\u{00A3}"), // Lira
+        ('\u{017C}', "\u{1E93}"), // Z dot
+        ('\u{00C1}', "\u{0041}"), // A acute
+    ];
 
-    // Complex swaps; maintain order!
-    let swap_e_breve = swap_a_acute.replace("\u{0065}\u{0306}", "\u{0115}");
-    let swap_breve = swap_e_breve.replace('\u{0306}', "\u{02D8}");
+    for (from, to) in swaps_simple {
+        cleaned = cleaned.replace(from, to);
+    }
 
-    // Single-instance fix
-    let fix_lone_madda = swap_breve.replace(
-        "\u{002F}\u{061F}\u{002F}",
-        "\u{0640}\u{0640}\u{0653}\u{0640}",
-    );
+    let swaps_complex: [(&str, &str); 3] = [
+        ("\u{0065}\u{0306}", "\u{0115}"), // E breve; maintain order with following!
+        ("\u{0306}", "\u{02D8}"),         // Breve; maintain order with preceding!
+        (
+            "\u{002F}\u{061F}\u{002F}",
+            "\u{0640}\u{0640}\u{0653}\u{0640}",
+        ), // Lone madda
+    ];
 
-    fix_lone_madda
+    for (from, to) in swaps_complex {
+        cleaned = cleaned.replace(from, to);
+    }
+
+    cleaned
 }
 
 #[cfg(test)]

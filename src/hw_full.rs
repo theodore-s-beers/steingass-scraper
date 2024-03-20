@@ -23,11 +23,10 @@ fn clean_hw_full(input: &str) -> String {
         cleaned = cleaned.replace(from, to);
     }
 
-    let swaps_simple: [(char, &str); 8] = [
+    let swaps_simple: [(char, &str); 7] = [
         ('\u{FB7A}', "\u{0686}"),         // Ch
         ('\u{0022}', "\u{02BB}\u{02BB}"), // Double ayn
         ('\u{00E2}', "\u{0101}"),         // A hat
-        ('\u{0680}', "\u{067E}"),         // Quad p
         ('\u{1E61}', "\u{1E63}"),         // Dot s
         ('\u{1E33}', "\u{006B}"),         // Dot k
         ('\u{2039}', "\u{012B}"),         // Left arrow
