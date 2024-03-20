@@ -46,7 +46,7 @@ fn clean_defs(input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::charsets::{ARABIC_ALLOWED, DEFS_ONLY, OTHER_ALLOWED};
+    use crate::charsets::{ARABIC_ALLOWED, DEFS_GREEK, DEFS_HEBREW, DEFS_MISC, OTHER_ALLOWED};
     use rusqlite::Connection;
 
     #[test]
@@ -72,7 +72,9 @@ mod tests {
                 assert!(
                     ARABIC_ALLOWED.contains(&(c as u32))
                         || OTHER_ALLOWED.contains(&(c as u32))
-                        || DEFS_ONLY.contains(&(c as u32))
+                        || DEFS_MISC.contains(&(c as u32))
+                        || DEFS_GREEK.contains(&(c as u32))
+                        || DEFS_HEBREW.contains(&(c as u32))
                         || c as u32 == 0x0674,
                     "Non-standard char in definitions (ID {}): U+{:04X}",
                     id,
