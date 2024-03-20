@@ -62,4 +62,25 @@ mod tests {
         assert_eq!(defs_greek, DEFS_GREEK);
         assert_eq!(defs_heb, DEFS_HEBREW);
     }
+
+    #[test]
+    fn no_duplicates() {
+        let total_length = ARABIC_ALLOWED.len()
+            + OTHER_ALLOWED.len()
+            + DEFS_MISC.len()
+            + DEFS_GREEK.len()
+            + DEFS_HEBREW.len();
+
+        let mut all_chars = Vec::with_capacity(total_length);
+        all_chars.extend_from_slice(&ARABIC_ALLOWED);
+        all_chars.extend_from_slice(&OTHER_ALLOWED);
+        all_chars.extend_from_slice(&DEFS_MISC);
+        all_chars.extend_from_slice(&DEFS_GREEK);
+        all_chars.extend_from_slice(&DEFS_HEBREW);
+
+        all_chars.sort_unstable();
+        all_chars.dedup();
+
+        assert_eq!(all_chars.len(), total_length);
+    }
 }
