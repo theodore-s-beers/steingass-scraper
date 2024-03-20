@@ -141,7 +141,10 @@ mod tests {
 
         for entry in entry_iter {
             let (id, raw_html, headword_full) = entry.unwrap();
-            println!("Checking ID {}", id);
+
+            if id % 100 == 0 {
+                println!("Checking ID {}", id);
+            }
 
             let parsed = Html::parse_fragment(&raw_html);
             let hw_full_regen = select_full_headword(&parsed).unwrap();
