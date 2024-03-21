@@ -124,7 +124,7 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 fn clean_simple(input: &str) -> String {
     let mut cleaned = input.trim().to_owned();
 
-    let swaps: [(char, &str); 17] = [
+    let swaps: [(char, &str); 19] = [
         ('\u{200D}', ""),         // Remove ZWJ
         ('\u{200F}', ""),         // Remove RLM
         ('\u{FBA9}', "\u{0647}"), // H medial
@@ -142,6 +142,8 @@ fn clean_simple(input: &str) -> String {
         ('\u{066E}', "\u{0628}"), // Dotless b
         ('\u{0320}', "\u{0331}"), // Macron below
         ('\u{0680}', "\u{067E}"), // Quad p
+        ('\u{064A}', "\u{06CC}"), // Arabic y to Persian y
+        ('\u{0643}', "\u{06A9}"), // Arabic k to Persian k
     ];
 
     for (from, to) in swaps {
