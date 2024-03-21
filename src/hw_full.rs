@@ -76,8 +76,7 @@ mod tests {
         for entry in entry_iter {
             let (id, headword_full) = entry.unwrap();
 
-            // Entry on ātish-ālūd is messed up; make sure to fix later
-            // Entry on najaz also seems off
+            // Entry on najaz seems off
             // Will allow semicolon for now, but it should probably be removed
             // Will allow ō for now, but it should probably be replaced with o
             // Use of U+02CC is odd, but will allow it for now
