@@ -101,4 +101,35 @@ mod tests {
             assert_eq!(cleaned, headword_latin, "Mismatch in ID {}", id);
         }
     }
+
+    // This will take a while to run; it has not yet run completely
+    // #[test]
+    fn _values_slow() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, raw_html, headword_latin FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let raw_html: String = row.get(1).unwrap();
+                let headword_latin: String = row.get(2).unwrap();
+                Ok((id, raw_html, headword_latin))
+            })
+            .unwrap();
+
+        for entry in entry_iter {
+            let (id, raw_html, headword_latin) = entry.unwrap();
+
+            if id % 100 == 0 {
+                println!("Checking ID {}", id);
+            }
+
+            let parsed = Html::parse_fragment(&raw_html);
+            let hw_latin_regen = get_hw_lat(&parsed).unwrap();
+
+            assert_eq!(hw_latin_regen, headword_latin);
+        }
+    }
 }
