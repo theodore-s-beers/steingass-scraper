@@ -1,0 +1,11 @@
+CREATE VIRTUAL TABLE ft_all USING fts5(headword_full, definitions, content='entries', content_rowid='id');
+INSERT INTO ft_all (headword_full, definitions) SELECT headword_full, definitions FROM entries;
+
+CREATE VIRTUAL TABLE ft_def USING fts5(definitions, content='entries', content_rowid='id');
+INSERT INTO ft_def (definitions) SELECT definitions FROM entries;
+
+CREATE VIRTUAL TABLE ft_hw USING fts5(headword_full, content='entries', content_rowid='id');
+INSERT INTO ft_hw (headword_full) SELECT headword_full FROM entries;
+
+CREATE VIRTUAL TABLE ft_per USING fts5(headword_persian, content='entries', content_rowid='id');
+INSERT INTO ft_per (headword_persian) SELECT headword_persian FROM entries;
