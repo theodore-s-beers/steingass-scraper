@@ -155,11 +155,11 @@ fn clean_simple(input: &str) -> String {
 }
 
 fn pandoc(input: &str) -> Result<String, anyhow::Error> {
-    let mut tempfile = NamedTempFile::new()?;
-    write!(tempfile, "{}", input)?;
+    let mut file = NamedTempFile::new()?;
+    write!(file, "{}", input)?;
 
     let pandoc = Command::new("pandoc")
-        .arg(tempfile.path())
+        .arg(file.path())
         .arg("-f")
         .arg("html")
         .arg("-t")
