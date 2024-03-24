@@ -124,7 +124,7 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 fn clean_simple(input: &str) -> String {
     let mut cleaned = input.trim().to_owned();
 
-    let swaps: [(char, &str); 22] = [
+    let swaps_simple: [(char, &str); 22] = [
         ('\u{02BB}', "\u{2018}"), // Left turned comma to left single quote
         ('\u{02BC}', "\u{2019}"), // Weird apostrophe to right single quote
         ('\u{0320}', "\u{0331}"), // Minus sign below to macron below
@@ -149,11 +149,18 @@ fn clean_simple(input: &str) -> String {
         ('\u{FEEB}', "\u{0647}"), // H initial
     ];
 
-    for (from, to) in swaps {
+    for (from, to) in swaps_simple {
         cleaned = cleaned.replace(from, to);
     }
 
-    cleaned = cleaned.replace("\u{0065}\u{0306}", "\u{0115}"); // E breve
+    let swaps_complex: [(&str, &str); 2] = [
+        ("\u{0020}\u{064B}", "\u{064B}"), // Remove space before fathatayn
+        ("\u{0065}\u{0306}", "\u{0115}"), // E breve
+    ];
+
+    for (from, to) in swaps_complex {
+        cleaned = cleaned.replace(from, to);
+    }
 
     cleaned
 }
