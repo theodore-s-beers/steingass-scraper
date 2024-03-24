@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.81"
-regex = "1.10.3"
-reqwest = { version = "0.12.0", features = ["blocking"] }
+regex = "1.10.4"
+reqwest = { version = "0.12.1", features = ["blocking"] }
 rusqlite = { version = "0.31.0", features = ["bundled"] }
 scraper = "0.19"
 tempfile = "3.10.1"
