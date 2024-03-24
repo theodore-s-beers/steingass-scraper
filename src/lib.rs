@@ -124,27 +124,29 @@ pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> 
 fn clean_simple(input: &str) -> String {
     let mut cleaned = input.trim().to_owned();
 
-    let swaps: [(char, &str); 20] = [
-        ('\u{200D}', ""),         // Remove ZWJ
-        ('\u{200F}', ""),         // Remove RLM
-        ('\u{FBA9}', "\u{0647}"), // H medial
-        ('\u{FB7D}', "\u{0686}"), // Ch
-        ('\u{FB58}', "\u{067E}"), // P initial
-        ('\u{FB59}', "\u{067E}"), // P medial
-        ('\u{FB8A}', "\u{0698}"), // Zh
-        ('\u{FB94}', "\u{06AF}"), // G
-        ('\u{FB8B}', "\u{0698}"), // Zh final
-        ('\u{FEEB}', "\u{0647}"), // H initial
-        ('\u{FE81}', "\u{0622}"), // Madda
-        ('\u{FE8A}', "\u{0626}"), // Hamza y
-        ('\u{06B1}', "\u{06AF}"), // Ngoeh
-        ('\u{06BE}', "\u{0647}"), // H do
-        ('\u{066E}', "\u{0628}"), // Dotless b
-        ('\u{0320}', "\u{0331}"), // Macron below
-        ('\u{0680}', "\u{067E}"), // Quad p
-        ('\u{064A}', "\u{06CC}"), // Arabic y to Persian y
+    let swaps: [(char, &str); 22] = [
+        ('\u{02BB}', "\u{2018}"), // Left turned comma to left single quote
+        ('\u{02BC}', "\u{2019}"), // Weird apostrophe to right single quote
+        ('\u{0320}', "\u{0331}"), // Minus sign below to macron below
         ('\u{0643}', "\u{06A9}"), // Arabic k to Persian k
         ('\u{0649}', "\u{06CC}"), // Alif maqsura to Persian y
+        ('\u{064A}', "\u{06CC}"), // Arabic y to Persian y
+        ('\u{066E}', "\u{0628}"), // Dotless b
+        ('\u{0680}', "\u{067E}"), // Quad p
+        ('\u{06B1}', "\u{06AF}"), // Ngoeh (?)
+        ('\u{06BE}', "\u{0647}"), // H do-chashmeh
+        ('\u{200D}', ""),         // Remove ZWJ
+        ('\u{200F}', ""),         // Remove RLM
+        ('\u{FB58}', "\u{067E}"), // P initial
+        ('\u{FB59}', "\u{067E}"), // P medial
+        ('\u{FB7D}', "\u{0686}"), // Ch medial
+        ('\u{FB8A}', "\u{0698}"), // Zh isolated
+        ('\u{FB8B}', "\u{0698}"), // Zh final
+        ('\u{FB94}', "\u{06AF}"), // G initial
+        ('\u{FBA9}', "\u{0647}"), // H medial
+        ('\u{FE81}', "\u{0622}"), // Alif madda isolated
+        ('\u{FE8A}', "\u{0626}"), // Hamza y
+        ('\u{FEEB}', "\u{0647}"), // H initial
     ];
 
     for (from, to) in swaps {

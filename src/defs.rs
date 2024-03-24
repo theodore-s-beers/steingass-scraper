@@ -24,7 +24,7 @@ fn clean_defs(input: &str) -> String {
         ('\u{04D4}', "\u{00C6}"), // Ae
         ('\u{00FB}', "\u{016B}"), // U hat
         ('\u{FE81}', "\u{0622}"), // Madda
-        ('\u{00B7}', "\u{02BB}"), // Dot
+        ('\u{00B7}', "\u{2018}"), // Dot
         ('\u{20A4}', "\u{00A3}"), // Lira
         ('\u{017C}', "\u{1E93}"), // Z dot
         ('\u{00C1}', "\u{0041}"), // A acute

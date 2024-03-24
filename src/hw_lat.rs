@@ -17,7 +17,7 @@ fn clean_hw_lat(input: &str) -> String {
     let mut cleaned = clean_simple(input);
 
     let swaps: [(char, &str); 6] = [
-        ('\u{0022}', "\u{02BB}\u{02BB}"), // Double ayn
+        ('\u{0022}', "\u{2018}\u{2018}"), // Double ayn
         ('\u{00E2}', "\u{0101}"),         // A hat
         ('\u{1E61}', "\u{1E63}"),         // Dot s
         ('\u{1E33}', "\u{006B}"),         // Dot k

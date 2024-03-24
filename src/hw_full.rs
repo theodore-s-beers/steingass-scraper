@@ -25,7 +25,7 @@ fn clean_hw_full(input: &str) -> String {
 
     let swaps_simple: [(char, &str); 7] = [
         ('\u{FB7A}', "\u{0686}"),         // Ch
-        ('\u{0022}', "\u{02BB}\u{02BB}"), // Double ayn
+        ('\u{0022}', "\u{2018}\u{2018}"), // Double ayn
         ('\u{00E2}', "\u{0101}"),         // A hat
         ('\u{1E61}', "\u{1E63}"),         // Dot s
         ('\u{1E33}', "\u{006B}"),         // Dot k
