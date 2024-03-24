@@ -153,6 +153,8 @@ fn clean_simple(input: &str) -> String {
         cleaned = cleaned.replace(from, to);
     }
 
+    cleaned = cleaned.replace("\u{0065}\u{0306}", "\u{0115}"); // E breve
+
     cleaned
 }
 

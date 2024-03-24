@@ -24,25 +24,24 @@ fn clean_hw_full(input: &str) -> String {
     }
 
     let swaps_simple: [(char, &str); 7] = [
-        ('\u{FB7A}', "\u{0686}"),         // Ch
         ('\u{0022}', "\u{2018}\u{2018}"), // Double ayn
-        ('\u{00E2}', "\u{0101}"),         // A hat
-        ('\u{1E61}', "\u{1E63}"),         // Dot s
-        ('\u{1E33}', "\u{006B}"),         // Dot k
-        ('\u{2039}', "\u{012B}"),         // Left arrow
         ('\u{00E0}', "\u{0061}"),         // A grave
+        ('\u{00E2}', "\u{0101}"),         // A hat
+        ('\u{1E33}', "\u{006B}"),         // Dot k
+        ('\u{1E61}', "\u{1E63}"),         // Dot s
+        ('\u{2039}', "\u{012B}"),         // Left arrow
+        ('\u{FB7A}', "\u{0686}"),         // Ch
     ];
 
     for (from, to) in swaps_simple {
         cleaned = cleaned.replace(from, to);
     }
 
-    let swaps_complex: [(&str, &str); 5] = [
-        ("\u{0627}\u{064E}", "\u{0622}"), // Alif fatha
-        ("\u{0065}\u{0306}", "\u{0115}"), // E breve
-        ("\u{06CC}\u{064E}", "\u{06CC}"), // Fix maris
+    let swaps_complex: [(&str, &str); 4] = [
         ("\u{0020}\u{064C}", "\u{064B}"), // Fix muwajahatan
         ("\u{0020}\u{064F}", "\u{064B}"), // Fix yasiran
+        ("\u{0627}\u{064E}", "\u{0622}"), // Alif fatha
+        ("\u{06CC}\u{064E}", "\u{06CC}"), // Fix maris
     ];
 
     for (from, to) in swaps_complex {

@@ -34,9 +34,8 @@ fn clean_defs(input: &str) -> String {
         cleaned = cleaned.replace(from, to);
     }
 
-    let swaps_complex: [(&str, &str); 3] = [
-        ("\u{0065}\u{0306}", "\u{0115}"), // E breve; maintain order with following!
-        ("\u{0306}", "\u{02D8}"),         // Breve; maintain order with preceding!
+    let swaps_complex: [(&str, &str); 2] = [
+        ("\u{0306}", "\u{02D8}"), // Breve (e breve should have been fixed already)
         (
             "\u{002F}\u{061F}\u{002F}",
             "\u{0640}\u{0640}\u{0653}\u{0640}",

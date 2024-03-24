@@ -18,18 +18,16 @@ fn clean_hw_lat(input: &str) -> String {
 
     let swaps: [(char, &str); 6] = [
         ('\u{0022}', "\u{2018}\u{2018}"), // Double ayn
-        ('\u{00E2}', "\u{0101}"),         // A hat
-        ('\u{1E61}', "\u{1E63}"),         // Dot s
-        ('\u{1E33}', "\u{006B}"),         // Dot k
-        ('\u{2039}', "\u{012B}"),         // Left arrow
         ('\u{00E0}', "\u{0061}"),         // A grave
+        ('\u{00E2}', "\u{0101}"),         // A hat
+        ('\u{1E33}', "\u{006B}"),         // Dot k
+        ('\u{1E61}', "\u{1E63}"),         // Dot s
+        ('\u{2039}', "\u{012B}"),         // Left arrow
     ];
 
     for (from, to) in swaps {
         cleaned = cleaned.replace(from, to);
     }
-
-    cleaned = cleaned.replace("\u{0065}\u{0306}", "\u{0115}"); // E breve
 
     cleaned
 }

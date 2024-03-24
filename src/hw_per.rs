@@ -17,11 +17,11 @@ fn clean_hw_per(input: &str) -> String {
     let swaps: [(&str, &str); 7] = [
         ("\u{0020}\u{0650}", ""), // Remove space kasra; maintain order with following!
         ("\u{0650}", ""),         // Remove any kasra; maintain order with preceding!
-        ("\u{0627}\u{064E}", "\u{0622}"), // Swap alif fatha
-        ("\u{0020}\u{064D}", "\u{064D}"), // Fix kasratayn
         ("\u{0020}\u{064C}", "\u{064B}"), // Fix muwajahatan
-        ("\u{06CC}\u{064E}", "\u{06CC}"), // Fix maris
+        ("\u{0020}\u{064D}", "\u{064D}"), // Fix kasratayn
         ("\u{0020}\u{064F}", "\u{064B}"), // Fix yasiran
+        ("\u{0627}\u{064E}", "\u{0622}"), // Swap alif fatha
+        ("\u{06CC}\u{064E}", "\u{06CC}"), // Fix maris
     ];
 
     for (from, to) in swaps {
