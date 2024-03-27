@@ -73,6 +73,7 @@ mod tests {
 
             for c in definitions.chars() {
                 // U+005C is used to escape other characters; can reflect problems
+                // Or maybe it was a problem only in the entry on Andromachus (now fixed)
                 // U+00ED is wrong, but not in a consistent way; perhaps fix later
 
                 assert!(
