@@ -23,8 +23,9 @@ fn clean_hw_full(input: &str) -> String {
         cleaned = cleaned.replace(from, to);
     }
 
-    let swaps_simple: [(char, &str); 7] = [
+    let swaps_simple: [(char, &str); 8] = [
         ('\u{0022}', "\u{2018}\u{2018}"), // Double ayn
+        ('\u{003B}', ""),                 // Remove semicolon
         ('\u{00E0}', "\u{0061}"),         // A grave
         ('\u{00E2}', "\u{0101}"),         // A hat
         ('\u{1E33}', "\u{006B}"),         // Dot k
@@ -75,14 +76,11 @@ mod tests {
         for entry in entry_iter {
             let (id, headword_full) = entry.unwrap();
 
-            // Entry on najaz seems off
-            // Will allow semicolon for now, but it should probably be removed
-            // Will allow ō for now, but it should probably be replaced with o
+            // Will allow ō for now, but it could be replaced with o
             // Use of U+02CC is odd, but will allow it for now
             // Apostrophe is used exactly once; might replace later
             // Need to replace ṭ eventually, but it isn't wrong in a consistent way
             // Same problem with î: wrong in two different ways
-            // Em dash should be removed eventually, but will allow it for now
             // Use of ĕ is strange but ok; it's really in the printed Steingass
 
             for c in headword_full.chars() {

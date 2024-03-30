@@ -220,18 +220,13 @@ mod tests {
         for entry in entry_iter_dev {
             let (id, html_dev) = entry.unwrap();
 
-            // Skipping problematic entry for abjad
-            if html_dev.contains(".jpg") {
-                continue;
-            }
-
-            // Skipping problematic entry for ātish-ālūd
-            if html_dev.contains("Suffused with fire") {
-                continue;
-            }
-
-            // Skipping problematic entry for Andromachus
-            if html_dev.contains("Andromachus") {
+            // Skipping entries whose HTML has been fixed manually
+            // abjad; ātish-ālūd; Andromachus; najz/najaz
+            if html_dev.contains(".jpg")
+                || html_dev.contains("Suffused with fire")
+                || html_dev.contains("Andromachus")
+                || html_dev.contains("najaz")
+            {
                 continue;
             }
 
