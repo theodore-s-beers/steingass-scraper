@@ -35,7 +35,48 @@ fn clean_hw_per(input: &str) -> String {
 mod tests {
     use super::*;
     use crate::charsets::ARABIC_ALLOWED;
+    use abjad::{Abjad, AbjadPrefs};
     use rusqlite::Connection;
+
+    #[test]
+    fn abjad() {
+        let conn = Connection::open("entries.sqlite").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, headword_persian, abjad FROM entries")
+            .unwrap();
+
+        let entry_iter = stmt
+            .query_map([], |row| {
+                let id: u32 = row.get(0).unwrap();
+                let headword_persian: String = row.get(1).unwrap();
+                let abjad_val: u32 = row.get(2).unwrap();
+                Ok((id, headword_persian, abjad_val))
+            })
+            .unwrap();
+
+        let prefs = AbjadPrefs::default();
+
+        for entry in entry_iter {
+            let (id, headword_persian, abjad_val) = entry.unwrap();
+            let abjad_computed = headword_persian.abjad(prefs);
+
+            // if abjad_computed != abjad_val {
+            //     println!("Fixing ID {}", id);
+
+            //     conn.execute(
+            //         "UPDATE entries SET abjad = ?1 WHERE id = ?2",
+            //         (abjad_computed, id),
+            //     )
+            //     .unwrap();
+            // }
+
+            assert_eq!(
+                abjad_computed, abjad_val,
+                "Mismatch (ID {}): {} != {}",
+                id, abjad_computed, abjad_val
+            );
+        }
+    }
 
     #[test]
     fn chars() {
