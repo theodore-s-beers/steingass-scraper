@@ -13,8 +13,8 @@ use steingass_scraper::hw_lat::get_hw_lat;
 use steingass_scraper::hw_per::get_hw_per;
 use steingass_scraper::langs::get_lang;
 use steingass_scraper::{
-    count_page_entries, ensure_table, fetch_html, insert_row, select_results, Entry, BAD_PAGES,
-    MAX_PAGE, MIN_PAGE,
+    BAD_PAGES, Entry, MAX_PAGE, MIN_PAGE, count_page_entries, ensure_table, fetch_html, insert_row,
+    select_results,
 };
 
 fn main() -> Result<(), anyhow::Error> {
