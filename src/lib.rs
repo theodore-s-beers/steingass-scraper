@@ -5,7 +5,7 @@
     clippy::module_name_repetitions,
     clippy::uninlined_format_args
 )]
-#![feature(variant_count)]
+#![cfg_attr(test, feature(variant_count))]
 
 use core::str;
 use std::io::Write;
@@ -80,15 +80,15 @@ pub fn fetch_html(page: u16) -> Result<Html, anyhow::Error> {
 }
 
 #[must_use]
-pub fn select_results(parsed: &Html) -> Vec<ElementRef> {
+pub fn select_results(parsed: &Html) -> Vec<ElementRef<'_>> {
     let selector = Selector::parse("#results_display .container div").unwrap();
     parsed.select(&selector).collect()
 }
 
 pub fn count_page_entries(conn: &Connection, page: u16) -> Result<usize, anyhow::Error> {
     let mut stmt = conn.prepare("SELECT COUNT(*) FROM entries WHERE page = ?")?;
-    let count: usize = stmt.query_row([page], |row| row.get(0))?;
-    Ok(count)
+    let count: i64 = stmt.query_row([page], |row| row.get(0))?;
+    Ok(usize::try_from(count)?)
 }
 
 pub fn insert_row(conn: &Connection, entry: Entry) -> Result<(), anyhow::Error> {

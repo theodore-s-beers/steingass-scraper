@@ -132,6 +132,8 @@ impl FromStr for Lang {
 #[must_use]
 pub fn get_lang(parsed: &Html) -> Lang {
     let selector = Selector::parse("lang").unwrap();
+
+    #[allow(clippy::useless_let_if_seq)]
     let mut lang = Lang::Unmarked;
 
     if let Some(result) = parsed.select(&selector).next() {
@@ -229,8 +231,9 @@ mod tests {
         let mut stmt = conn
             .prepare("SELECT COUNT(DISTINCT lang) FROM entries")
             .unwrap();
-        let count: usize = stmt.query_row([], |row| row.get(0)).unwrap();
+        let count: i64 = stmt.query_row([], |row| row.get(0)).unwrap();
+        let count_usize = usize::try_from(count).unwrap();
 
-        assert_eq!(count, variants);
+        assert_eq!(count_usize, variants);
     }
 }
