@@ -44,6 +44,13 @@ pub const HTML: &[Correction] = &[
         after: "<div>&nbsp;&nbsp;\n\t\t\t<hw><pa>جزیدن</pa> <i>jazīdan</i></hw> , To change. \n\t\t\t</div>",
         reason: "Restore missing dal in jazīdan; https://github.com/theodore-s-beers/steingass-scraper/issues/3",
     },
+    Correction {
+        id: 39272,
+        field: "raw_html",
+        before: "<div>&nbsp;&nbsp;\n\t\t\t<lang>A</lang> <hw><pa>عاشتق</pa> <i>ʻāshiq</i></hw> , A lover, inamorato, sweetheart, mistress; amorous; transported with divine love; — <i>ʻāshiqi bī-chāra</i>, A species of ivy; — <i>ʻāshiqi ḵẖushq</i>, A faithless lover; — <i>ʻāshiqi dīwāna</i>, Frantic, mad, dying with love; — <i>ʻāshiqi sag-jān</i>, A worldling; — <i>ʻāshiq shudan</i>, To fall in love; — <i>ʻāshiqi majnūn (maftūn)</i>, Madly in love; — <i>ʻāshiq u maʻshūq</i>, Lover and beloved, a couple of lovers. \n\t\t\t</div>",
+        after: "<div>&nbsp;&nbsp;\n\t\t\t<lang>A</lang> <hw><pa>عاشق</pa> <i>ʻāshiq</i></hw> , A lover, inamorato, sweetheart, mistress; amorous; transported with divine love; — <i>ʻāshiqi bī-chāra</i>, A species of ivy; — <i>ʻāshiqi ḵẖushq</i>, A faithless lover; — <i>ʻāshiqi dīwāna</i>, Frantic, mad, dying with love; — <i>ʻāshiqi sag-jān</i>, A worldling; — <i>ʻāshiq shudan</i>, To fall in love; — <i>ʻāshiqi majnūn (maftūn)</i>, Madly in love; — <i>ʻāshiq u maʻshūq</i>, Lover and beloved, a couple of lovers. \n\t\t\t</div>",
+        reason: "Remove spurious ta in āshiq (printed pp. 829–830); reported by Assanali Iskakov, 2026-11-11. https://steingass.theobeers.com/page-img/0829.jpg",
+    },
 ];
 
 pub const FIELDS: &[Correction] = &[

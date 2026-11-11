@@ -242,6 +242,26 @@ mod tests {
     }
 
     #[test]
+    fn ashiq_correction() {
+        // Reported by Assanali Iskakov: remove the extra ta; retain source pagination.
+        for database in ["entries.sqlite", "entries_slim.sqlite"] {
+            let conn = Connection::open(database).unwrap();
+            let (page, persian, full, abjad): (u16, String, String, u32) = conn
+                .query_row(
+                    "SELECT page, headword_persian, headword_full, abjad FROM entries WHERE id = 39272",
+                    [],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                )
+                .unwrap();
+
+            assert_eq!(page, 830, "{database}");
+            assert_eq!(persian, "عاشق", "{database}");
+            assert_eq!(full, "عاشق *‘āshiq*", "{database}");
+            assert_eq!(abjad, 471, "{database}");
+        }
+    }
+
+    #[test]
     fn jazidan_correction() {
         // Issue #3: keep both published forms of the entry consistent.
         for database in ["entries.sqlite", "entries_slim.sqlite"] {
