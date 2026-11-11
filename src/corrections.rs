@@ -51,6 +51,20 @@ pub const HTML: &[Correction] = &[
         after: "<div>&nbsp;&nbsp;\n\t\t\t<lang>A</lang> <hw><pa>عاشق</pa> <i>ʻāshiq</i></hw> , A lover, inamorato, sweetheart, mistress; amorous; transported with divine love; — <i>ʻāshiqi bī-chāra</i>, A species of ivy; — <i>ʻāshiqi ḵẖushq</i>, A faithless lover; — <i>ʻāshiqi dīwāna</i>, Frantic, mad, dying with love; — <i>ʻāshiqi sag-jān</i>, A worldling; — <i>ʻāshiq shudan</i>, To fall in love; — <i>ʻāshiqi majnūn (maftūn)</i>, Madly in love; — <i>ʻāshiq u maʻshūq</i>, Lover and beloved, a couple of lovers. \n\t\t\t</div>",
         reason: "Remove spurious ta in āshiq (printed pp. 829–830); reported by Assanali Iskakov, 2026-11-11. https://steingass.theobeers.com/page-img/0829.jpg",
     },
+    Correction {
+        id: 22761,
+        field: "raw_html",
+        before: "<div>&nbsp;&nbsp;\n\t\t\t<hw><pa>خشك گودن</pa> <i>ḵẖushk-gardan</i></hw> , Stiff-necked. \n\t\t\t</div>",
+        after: "<div>&nbsp;&nbsp;\n\t\t\t<hw><pa>خشك گردن</pa> <i>ḵẖushk-gardan</i></hw> , Stiff-necked. \n\t\t\t</div>",
+        reason: "Replace waw with ra in khushk-gardan; reported by M. Ali Kara, 2024-11-15. https://steingass.theobeers.com/page-img/0462.jpg",
+    },
+    Correction {
+        id: 22862,
+        field: "raw_html",
+        before: "<div>&nbsp;&nbsp;\n\t\t\t<lang><i>a</i></lang> <hw><pa>خصو متگاه</pa> <i>ḵẖaṣūmat-gāh</i>, <pa>خصومتگه</pa> <i>ḵẖāṣūmat-gah</i></hw> , A place of contention; a battle-field. \n\t\t\t</div>",
+        after: "<div>&nbsp;&nbsp;\n\t\t\t<lang><i>a</i></lang> <hw><pa>خصومتگاه</pa> <i>ḵẖaṣūmat-gāh</i>, <pa>خصومتگه</pa> <i>ḵẖāṣūmat-gah</i></hw> , A place of contention; a battle-field. \n\t\t\t</div>",
+        reason: "Remove the intrusive space in khasumat-gah; reported by M. Ali Kara, 2024-11-15. https://steingass.theobeers.com/page-img/0464.jpg",
+    },
 ];
 
 pub const FIELDS: &[Correction] = &[

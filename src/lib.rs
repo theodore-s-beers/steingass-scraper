@@ -242,6 +242,36 @@ mod tests {
     }
 
     #[test]
+    fn kara_headword_corrections() {
+        // Reported by M. Ali Kara, 2024-11-15; checked against printed pp. 462/464.
+        for database in ["entries.sqlite", "entries_slim.sqlite"] {
+            let conn = Connection::open(database).unwrap();
+            for (id, expected_page, expected_persian, expected_full, expected_abjad) in [
+                (22761, 462, "خشک گردن", "خشک گردن *ḵẖushk-gardan*", 1194),
+                (
+                    22862,
+                    464,
+                    "خصومتگاه",
+                    "خصومتگاه *ḵẖaṣūmat-gāh*, خصومتگه *ḵẖāṣūmat-gah*",
+                    1162,
+                ),
+            ] {
+                let (page, persian, full, abjad): (u16, String, String, u32) = conn
+                    .query_row(
+                        "SELECT page, headword_persian, headword_full, abjad FROM entries WHERE id = ?",
+                        [id],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                    )
+                    .unwrap();
+                assert_eq!(page, expected_page, "{database}, ID {id}");
+                assert_eq!(persian, expected_persian, "{database}, ID {id}");
+                assert_eq!(full, expected_full, "{database}, ID {id}");
+                assert_eq!(abjad, expected_abjad, "{database}, ID {id}");
+            }
+        }
+    }
+
+    #[test]
     fn ashiq_correction() {
         // Reported by Assanali Iskakov: remove the extra ta; retain source pagination.
         for database in ["entries.sqlite", "entries_slim.sqlite"] {
