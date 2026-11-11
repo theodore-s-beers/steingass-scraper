@@ -297,11 +297,7 @@ pub fn compare(actual: &Path, expected: &Path) -> Result<()> {
     fn read(path: &Path) -> Result<(Vec<String>, StoredRows)> {
         let connection = read_only(path)?;
         let mut statement = connection.prepare("SELECT * FROM entries ORDER BY id")?;
-        let columns: Vec<String> = statement
-            .column_names()
-            .iter()
-            .map(ToString::to_string)
-            .collect();
+        let columns: Vec<String> = statement.column_names().map(ToString::to_string).collect();
         let id_column = columns
             .iter()
             .position(|c| c == "id")
@@ -427,7 +423,7 @@ mod tests {
                 assert_eq!(actual, expected, "{filename}: {pragma}");
             }
             let statement = output.prepare("SELECT * FROM entries").unwrap();
-            let columns = statement.column_names().join(", ");
+            let columns = statement.column_names().collect::<Vec<_>>().join(", ");
             let column_count = statement.column_count();
             let count: u32 = output
                 .query_row("SELECT COUNT(*) FROM entries", [], |r| r.get(0))
