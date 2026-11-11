@@ -17,7 +17,17 @@ use steingass_scraper::{
     select_results,
 };
 
-fn main() -> Result<(), anyhow::Error> {
+fn main() {
+    println!(
+        "Scraping is complete and disabled. No pages will be fetched or database changes made."
+    );
+}
+
+// Retained for reference only; deliberately not called by main.
+// To scrape again, explicitly restore a call from main and review the verification-only
+// assertions below, which currently prevent insertion of new entries.
+#[allow(dead_code)]
+fn scrape_and_verify() -> Result<(), anyhow::Error> {
     println!("Ensuring DB connection...");
     let conn = Connection::open("entries.sqlite")?;
     ensure_table(&conn)?;
