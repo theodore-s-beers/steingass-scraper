@@ -5,7 +5,6 @@
     clippy::module_name_repetitions,
     clippy::uninlined_format_args
 )]
-#![cfg_attr(test, feature(variant_count))]
 
 use core::str;
 use std::io::Write;

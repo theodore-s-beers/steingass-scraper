@@ -5,40 +5,62 @@ use std::str::FromStr;
 // Type definitions
 //
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Default)]
-pub enum Lang {
-    #[default]
-    Unmarked,
+// Keep the enum and its test-only variant list in sync from one declaration.
+macro_rules! enum_with_variants {
+    (
+        $(#[$enum_attr:meta])*
+        $vis:vis enum $name:ident {
+            $($(#[$variant_attr:meta])* $variant:ident),* $(,)?
+        }
+    ) => {
+        $(#[$enum_attr])*
+        $vis enum $name {
+            $($(#[$variant_attr])* $variant),*
+        }
 
-    Arabic,     // A, B (single-occurrence typo)
-    English,    // E
-    Greek,      // G
-    Hebrew,     // HE
-    Hindi,      // H
-    Latin,      // L
-    Mongolian,  // M
-    Persian,    // P
-    Portuguese, // PORT
-    Russian,    // R
-    Sanskrit,   // S
-    Spanish,    // SP
-    Syriac,     // SY
-    Turkish,    // T
-    Urdu,       // U
+        #[cfg(test)]
+        impl $name {
+            const VARIANTS: &'static [Self] = &[$(Self::$variant),*];
+        }
+    };
+}
 
-    ArabicGreek,   // A G
-    ArabicTurkish, // A T
+enum_with_variants! {
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Default)]
+    pub enum Lang {
+        #[default]
+        Unmarked,
 
-    PersianArabic,    // a, ā, o (single-occurrence typo), A a, A P
-    PersianGreek,     // g
-    PersianHindi,     // h
-    PersianMongolian, // m
-    PersianRussian,   // r
-    PersianTurkish,   // t
+        Arabic,     // A, B (single-occurrence typo)
+        English,    // E
+        Greek,      // G
+        Hebrew,     // HE
+        Hindi,      // H
+        Latin,      // L
+        Mongolian,  // M
+        Persian,    // P
+        Portuguese, // PORT
+        Russian,    // R
+        Sanskrit,   // S
+        Spanish,    // SP
+        Syriac,     // SY
+        Turkish,    // T
+        Urdu,       // U
 
-    PersianArabicGreek,   // g a
-    PersianArabicHindi,   // a h
-    PersianArabicTurkish, // a t, t a, a p t
+        ArabicGreek,   // A G
+        ArabicTurkish, // A T
+
+        PersianArabic,    // a, ā, o (single-occurrence typo), A a, A P
+        PersianGreek,     // g
+        PersianHindi,     // h
+        PersianMongolian, // m
+        PersianRussian,   // r
+        PersianTurkish,   // t
+
+        PersianArabicGreek,   // g a
+        PersianArabicHindi,   // a h
+        PersianArabicTurkish, // a t, t a, a p t
+    }
 }
 
 #[derive(Debug)]
@@ -184,7 +206,7 @@ pub fn get_lang(parsed: &Html) -> Lang {
 mod tests {
     use super::*;
     use rusqlite::Connection;
-    use std::mem::variant_count;
+    use std::collections::BTreeSet;
 
     #[test]
     fn lang_values() {
@@ -225,15 +247,17 @@ mod tests {
 
     #[test]
     fn variants() {
-        let variants = variant_count::<Lang>();
+        let expected: BTreeSet<&str> = Lang::VARIANTS.iter().map(|lang| lang.as_str()).collect();
 
         let conn = Connection::open("entries.sqlite").unwrap();
-        let mut stmt = conn
-            .prepare("SELECT COUNT(DISTINCT lang) FROM entries")
+        let mut stmt = conn.prepare("SELECT DISTINCT lang FROM entries").unwrap();
+        let labels: BTreeSet<String> = stmt
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
             .unwrap();
-        let count: i64 = stmt.query_row([], |row| row.get(0)).unwrap();
-        let count_usize = usize::try_from(count).unwrap();
+        let actual: BTreeSet<&str> = labels.iter().map(String::as_str).collect();
 
-        assert_eq!(count_usize, variants);
+        assert_eq!(actual, expected);
     }
 }
