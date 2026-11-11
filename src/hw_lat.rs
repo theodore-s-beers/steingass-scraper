@@ -2,9 +2,16 @@ use crate::{clean_simple, pandoc};
 use scraper::{Html, Selector};
 
 pub fn get_hw_lat(parsed: &Html) -> Result<String, anyhow::Error> {
+    get_hw_lat_with(parsed, &mut pandoc)
+}
+
+pub(crate) fn get_hw_lat_with(
+    parsed: &Html,
+    convert: &mut impl FnMut(&str) -> Result<String, anyhow::Error>,
+) -> Result<String, anyhow::Error> {
     let selector_i = Selector::parse("hw i").unwrap();
     let latin_text = match parsed.select(&selector_i).next() {
-        Some(latin) => pandoc(&latin.html())?,
+        Some(latin) => convert(&latin.html())?,
         None => "N/A".to_owned(),
     };
     let cleaned = clean_hw_lat(&latin_text);

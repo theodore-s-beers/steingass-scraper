@@ -2,6 +2,13 @@ use crate::{clean_simple, pandoc};
 use regex::Regex;
 
 pub fn except_headword(input: &str) -> Result<String, anyhow::Error> {
+    except_headword_with(input, &mut pandoc)
+}
+
+pub(crate) fn except_headword_with(
+    input: &str,
+    convert: &mut impl FnMut(&str) -> Result<String, anyhow::Error>,
+) -> Result<String, anyhow::Error> {
     let re_c = Regex::new("<c>.*</c>").unwrap();
     let re_hw = Regex::new("<hw>.*</hw>").unwrap();
     let re_lang = Regex::new("<lang>.*</lang>").unwrap();
@@ -10,7 +17,7 @@ pub fn except_headword(input: &str) -> Result<String, anyhow::Error> {
     let without_hw = re_hw.replace_all(&without_c, "");
     let without_lang = re_lang.replace_all(&without_hw, "");
 
-    let processed = pandoc(&without_lang)?;
+    let processed = convert(&without_lang)?;
     let cleaned = clean_defs(&processed);
 
     Ok(cleaned)

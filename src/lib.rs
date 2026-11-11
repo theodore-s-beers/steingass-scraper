@@ -16,11 +16,13 @@ use scraper::{ElementRef, Html, Selector};
 use tempfile::NamedTempFile;
 
 pub mod charsets;
+mod corrections;
 pub mod defs;
 pub mod hw_full;
 pub mod hw_lat;
 pub mod hw_per;
 pub mod langs;
+pub mod rebuild;
 
 use langs::Lang;
 
@@ -177,6 +179,11 @@ fn pandoc(input: &str) -> Result<String, anyhow::Error> {
         .arg("--wrap=none")
         .output()?;
 
+    anyhow::ensure!(
+        pandoc.status.success(),
+        "Pandoc failed: {}",
+        String::from_utf8_lossy(&pandoc.stderr)
+    );
     let output = str::from_utf8(&pandoc.stdout)?;
     let cleaned = output.trim().trim_start_matches(',').trim_start();
 
@@ -219,23 +226,37 @@ mod tests {
         for entry in entry_iter_dev {
             let (id, html_dev) = entry.unwrap();
 
-            // Skipping entries whose HTML has been fixed manually
-            // abjad; ātish-ālūd; Andromachus; najz/najaz
-            if html_dev.contains(".jpg")
-                || html_dev.contains("Suffused with fire")
-                || html_dev.contains("Andromachus")
-                || html_dev.contains("najaz")
-            {
-                continue;
-            }
-
             let mut stmt_entry_backup = conn_backup
                 .prepare("SELECT raw_html FROM entries WHERE id = ?")
                 .unwrap();
 
             let html_backup: String = stmt_entry_backup.query_row([id], |row| row.get(0)).unwrap();
 
-            assert_eq!(html_dev, html_backup);
+            let mut corrected = html_backup;
+            for correction in crate::corrections::HTML.iter().filter(|c| c.id == id) {
+                assert_eq!(corrected, correction.before, "Original HTML for ID {id}");
+                correction.after.clone_into(&mut corrected);
+            }
+            assert_eq!(html_dev, corrected, "Corrected HTML for ID {id}");
+        }
+    }
+
+    #[test]
+    fn jazidan_correction() {
+        // Issue #3: keep both published forms of the entry consistent.
+        for database in ["entries.sqlite", "entries_slim.sqlite"] {
+            let conn = Connection::open(database).unwrap();
+            let (persian, full, abjad): (String, String, u32) = conn
+                .query_row(
+                    "SELECT headword_persian, headword_full, abjad FROM entries WHERE id = 18269",
+                    [],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                )
+                .unwrap();
+
+            assert_eq!(persian, "جزیدن", "{database}");
+            assert_eq!(full, "جزیدن *jazīdan*", "{database}");
+            assert_eq!(abjad, 74, "{database}");
         }
     }
 

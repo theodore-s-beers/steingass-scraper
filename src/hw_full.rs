@@ -2,9 +2,16 @@ use crate::{clean_simple, pandoc};
 use scraper::{Html, Selector};
 
 pub fn select_full_headword(parsed: &Html) -> Result<String, anyhow::Error> {
+    select_full_headword_with(parsed, &mut pandoc)
+}
+
+pub(crate) fn select_full_headword_with(
+    parsed: &Html,
+    convert: &mut impl FnMut(&str) -> Result<String, anyhow::Error>,
+) -> Result<String, anyhow::Error> {
     let selector = Selector::parse("hw").unwrap();
     let hw_full = parsed.select(&selector).next().unwrap();
-    let hw_full_text = pandoc(&hw_full.html())?;
+    let hw_full_text = convert(&hw_full.html())?;
     let cleaned = clean_hw_full(&hw_full_text);
 
     Ok(cleaned)
